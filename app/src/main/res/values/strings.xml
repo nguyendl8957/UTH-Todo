@@ -1,3 +1,41 @@
 <resources>
     <string name="app_name">UTH Todo</string>
+
+    <!-- Login -->
+    <string name="login_welcome">Chào mừng đến với\nUTH Todo</string>
+    <string name="login_description">Đăng nhập để lưu công việc và đồng bộ trên mọi thiết bị của bạn.</string>
+    <string name="login_google">Tiếp tục với Google</string>
+    <string name="login_email">Tiếp tục với Email</string>
+    <string name="login_github">Tiếp tục với GitHub</string>
+    <string name="login_or">hoặc</string>
+    <string name="login_guest">Dùng thử không cần tài khoản</string>
+    <string name="login_terms">Khi tiếp tục, bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư của UTH Todo.</string>
+
+
+    <!-- Splash -->
+    <string name="splash_tagline">Việc học, việc nhà – gọn gàng mỗi ngày</string>
+    <string name="splash_version">Phiên bản 1.0</string>
+    <!-- Onboarding 1 -->
+    <string name="onboarding_1_title">Mọi việc, gọn trong một chỗ</string>
+    <string name="onboarding_1_description">Ghi lại bài tập, việc nhà, lịch hẹn. Không còn quên việc nào.</string>
+    <!-- Onboarding 2 -->
+    <string name="onboarding_2_title">Chia theo Học tập và Cuộc sống</string>
+    <string name="onboarding_2_description">Mỗi việc có nhóm riêng, nhìn là biết hôm nay cần lo gì.</string>
+    <!-- Onboarding 3 -->
+    <string name="onboarding_3_title">Nhắc đúng lúc</string>
+    <string name="onboarding_3_description">Bật thông báo để UTH Todo nhắc bạn trước hạn chót.</string>
+    <!-- Onboarding shared -->
+    <string name="onboarding_skip">Bỏ qua</string>
+    <string name="onboarding_continue">Tiếp tục</string>
+    <string name="onboarding_get_started">Bắt đầu ngay</string>
+    <!-- Navigation placeholder -->
+    <string name="login_placeholder">Tiếp theo: Đăng nhập UTH Todo</string>
+
+    <string name="login_not_ready">Phương thức đăng nhập đang được tích hợp. Vui lòng thử lại sau.</string>
+
+    <string name="login_google_success">Đăng nhập Google thành công!</string>
+    <string name="login_google_failed">Không thể đăng nhập bằng Google. Vui lòng thử lại.</string>
+
+    <string name="auth_test_signed_in">Đã đăng nhập Firebase thành công</string>
+    <string name="auth_test_sign_out">Đăng xuất</string>
 </resources>
