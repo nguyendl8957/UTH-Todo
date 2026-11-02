@@ -4,6 +4,9 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
+import androidx.activity.ComponentActivity
+import com.google.firebase.auth.OAuthProvider
+
 class AuthRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
@@ -191,6 +194,85 @@ class AuthRepository(
                     )
                 }
             }
+    }
+
+
+    fun signInAnonymously(
+        onResult: (Result<FirebaseUser>) -> Unit
+    ) {
+        // Nếu đã có phiên khách, giữ nguyên UID.
+        val existingUser = auth.currentUser
+
+        if (existingUser != null && existingUser.isAnonymous) {
+            onResult(Result.success(existingUser))
+            return
+        }
+
+        // Chưa có phiên khách: yêu cầu Firebase xác thực.
+        auth.signInAnonymously()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val user = task.result?.user
+
+                    if (user != null && user.isAnonymous) {
+                        onResult(Result.success(user))
+                    } else {
+                        onResult(
+                            Result.failure(
+                                IllegalStateException(
+                                    "Firebase không trả về tài khoản khách."
+                                )
+                            )
+                        )
+                    }
+                } else {
+                    onResult(
+                        Result.failure(
+                            task.exception
+                                ?: Exception("Không thể đăng nhập khách.")
+                        )
+                    )
+                }
+            }
+    }
+
+
+    fun signInWithGitHub(
+        activity: ComponentActivity,
+        onResult: (Result<FirebaseUser>) -> Unit
+    ) {
+        val provider = OAuthProvider.newBuilder("github.com").build()
+
+        val task = auth.pendingAuthResult
+            ?: auth.startActivityForSignInWithProvider(
+                activity,
+                provider
+            )
+
+        task.addOnCompleteListener { result ->
+            if (result.isSuccessful) {
+                val user = result.result?.user
+
+                if (user != null) {
+                    onResult(Result.success(user))
+                } else {
+                    onResult(
+                        Result.failure(
+                            IllegalStateException(
+                                "Firebase không trả về người dùng GitHub."
+                            )
+                        )
+                    )
+                }
+            } else {
+                onResult(
+                    Result.failure(
+                        result.exception
+                            ?: Exception("Đăng nhập GitHub thất bại.")
+                    )
+                )
+            }
+        }
     }
 
     // Đăng xuất khỏi Firebase Authentication.

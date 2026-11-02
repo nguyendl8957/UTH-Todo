@@ -301,8 +301,57 @@ class MainActivity : ComponentActivity() {
                             onEmailClick = {
                                 currentScreen = StartScreen.EMAIL_AUTH
                             },
-                            onGithubClick = showNotReady,
-                            onGuestClick = showNotReady
+                            onGithubClick = {
+                                val repository = AuthRepository()
+
+                                repository.signInWithGitHub(
+                                    activity = this@MainActivity
+                                ) { result ->
+                                    if (result.isSuccess) {
+                                        googleSignInBusy = false
+                                        currentScreen = StartScreen.AUTH_TEST
+
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            getString(R.string.github_login_success),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            getString(R.string.github_login_failed),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            },
+
+                            onGuestClick = {
+                                val repository = AuthRepository()
+                                val existingUser = repository.currentUser()
+
+                                if (existingUser != null && !existingUser.isAnonymous) {
+                                    // Đang có tài khoản Google/Email:
+                                    // không âm thầm thay thế phiên đăng nhập.
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        getString(R.string.guest_existing_account),
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    repository.signInAnonymously { result ->
+                                        if (result.isSuccess) {
+                                            currentScreen = StartScreen.AUTH_TEST
+                                        } else {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                getString(R.string.guest_login_failed),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            }
                         )
                     }
                 }

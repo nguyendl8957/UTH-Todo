@@ -58,4 +58,10 @@
 
     <string name="email_show_password">Hiện mật khẩu</string>
     <string name="email_hide_password">Ẩn mật khẩu</string>
+
+    <string name="guest_existing_account">Bạn đang đăng nhập bằng tài khoản khác. Hãy đăng xuất trước khi dùng chế độ khách.</string>
+    <string name="guest_login_failed">Không thể bắt đầu chế độ khách. Vui lòng thử lại.</string>
+
+    <string name="github_login_success">Đăng nhập GitHub thành công!</string>
+    <string name="github_login_failed">Không thể đăng nhập bằng GitHub. Vui lòng thử lại.</string>
 </resources>
