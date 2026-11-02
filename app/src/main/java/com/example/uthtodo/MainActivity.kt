@@ -33,11 +33,14 @@ import com.example.uthtodo.ui.screens.AuthTestScreen
 import androidx.credentials.CredentialManager
 import androidx.credentials.ClearCredentialStateRequest
 
+import com.example.uthtodo.ui.screens.EmailAuthScreen
+
 private enum class StartScreen {
     SPLASH,
     ONBOARDING,
     LOGIN,
-    AUTH_TEST
+    AUTH_TEST,
+    EMAIL_AUTH
 }
 
 class MainActivity : ComponentActivity() {
@@ -53,6 +56,9 @@ class MainActivity : ComponentActivity() {
 
                 var currentScreen by rememberSaveable {
                     mutableStateOf(StartScreen.SPLASH)
+                }
+                var canResendVerification by rememberSaveable {
+                    mutableStateOf(false)
                 }
 
                 when (currentScreen) {
@@ -73,6 +79,145 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+
+                    StartScreen.EMAIL_AUTH -> {
+                        val repository = AuthRepository()
+
+                        val showEmailNotReady = {
+                            Toast.makeText(
+                                this@MainActivity,
+                                getString(R.string.login_not_ready),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        EmailAuthScreen(
+                            canResendVerification = canResendVerification,
+                            onBackClick = {
+                                canResendVerification = false
+                                currentScreen = StartScreen.LOGIN
+                            },
+
+                            onSignInClick = { email, password ->
+                                repository.signInWithEmail(
+                                    email = email,
+                                    password = password
+                                ) { result ->
+                                    if (result.isSuccess) {
+                                        repository.checkEmailVerified { verificationResult ->
+                                            when {
+                                                verificationResult.isSuccess &&
+                                                        verificationResult.getOrNull() == true -> {
+                                                    canResendVerification = false
+                                                    currentScreen = StartScreen.AUTH_TEST
+                                                }
+
+                                                verificationResult.isSuccess -> {
+                                                    canResendVerification = true
+
+                                                    Toast.makeText(
+                                                        this@MainActivity,
+                                                        getString(R.string.email_not_verified),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+
+                                                else -> {
+                                                    Toast.makeText(
+                                                        this@MainActivity,
+                                                        getString(R.string.email_verification_check_failed),
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            getString(R.string.email_login_failed),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            },
+
+                            onRegisterClick = { email, password ->
+                                repository.registerWithEmail(
+                                    email = email,
+                                    password = password
+                                ) { result ->
+                                    if (result.isSuccess) {
+
+                                        // Tài khoản mới đăng ký chưa xác minh email
+                                        canResendVerification = true
+
+                                        repository.sendVerificationEmail { verificationResult ->
+                                            val message = if (verificationResult.isSuccess) {
+                                                getString(R.string.email_verification_sent)
+                                            } else {
+                                                getString(R.string.email_verification_send_failed)
+                                            }
+
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                message,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                    else {
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            getString(R.string.email_register_failed),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            },
+
+                            onForgotPasswordClick = { email ->
+                                if (email.isBlank()) {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        getString(R.string.email_required),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    repository.sendPasswordResetEmail(email) { result ->
+                                        val message = if (result.isSuccess) {
+                                            getString(R.string.email_reset_requested)
+                                        } else {
+                                            getString(R.string.email_reset_failed)
+                                        }
+
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            message,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
+                            },
+
+                            onResendVerificationClick = {
+                                repository.sendVerificationEmail { result ->
+                                    val message = if (result.isSuccess) {
+                                        getString(R.string.email_verification_sent_again)
+                                    } else {
+                                        getString(R.string.email_verification_send_failed)
+                                    }
+
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        message,
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
+                        )
+                    }
+
+
                     StartScreen.AUTH_TEST -> {
                         AuthTestScreen(
                             onSignOutClick = {
@@ -90,6 +235,7 @@ class MainActivity : ComponentActivity() {
 
                                     AuthRepository().signOut()
                                     googleSignInBusy = false
+                                    canResendVerification = false
                                     currentScreen = StartScreen.LOGIN
                                 }
                             }
@@ -152,7 +298,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             },
-                            onEmailClick = showNotReady,
+                            onEmailClick = {
+                                currentScreen = StartScreen.EMAIL_AUTH
+                            },
                             onGithubClick = showNotReady,
                             onGuestClick = showNotReady
                         )

@@ -38,4 +38,24 @@
 
     <string name="auth_test_signed_in">Đã đăng nhập Firebase thành công</string>
     <string name="auth_test_sign_out">Đăng xuất</string>
+
+    <string name="email_register_success">Tạo tài khoản thành công! Email chưa được xác minh.</string>
+    <string name="email_register_failed">Không thể tạo tài khoản. Vui lòng kiểm tra email, mật khẩu và thử lại.</string>
+
+    <string name="email_verification_sent">Đăng ký thành công! Hãy kiểm tra email để xác minh tài khoản.</string>
+    <string name="email_verification_send_failed">Đã tạo tài khoản nhưng chưa gửi được thư xác minh. Vui lòng thử lại sau.</string>
+
+    <string name="email_not_verified">Email chưa được xác minh. Hãy kiểm tra hộp thư.</string>
+    <string name="email_verification_check_failed">Không thể kiểm tra trạng thái xác minh. Vui lòng thử lại.</string>
+    <string name="email_login_failed">Đăng nhập thất bại. Vui lòng kiểm tra thông tin.</string>
+
+    <string name="email_required">Vui lòng nhập email trước.</string>
+    <string name="email_reset_requested">Nếu tài khoản đủ điều kiện, bạn sẽ nhận được email đặt lại mật khẩu.</string>
+    <string name="email_reset_failed">Không thể xử lý yêu cầu. Vui lòng thử lại sau.</string>
+
+    <string name="email_resend_verification">Gửi lại email xác minh</string>
+    <string name="email_verification_sent_again">Đã yêu cầu gửi email xác minh. Hãy kiểm tra hộp thư.</string>
+
+    <string name="email_show_password">Hiện mật khẩu</string>
+    <string name="email_hide_password">Ẩn mật khẩu</string>
 </resources>
