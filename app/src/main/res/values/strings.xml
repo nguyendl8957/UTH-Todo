@@ -64,4 +64,66 @@
 
     <string name="github_login_success">Đăng nhập GitHub thành công!</string>
     <string name="github_login_failed">Không thể đăng nhập bằng GitHub. Vui lòng thử lại.</string>
+
+    <!-- Home -->
+    <string name="home_greeting_guest">Chào bạn!</string>
+    <string name="home_greeting_user">Chào %1$s!</string>
+    <string name="home_notifications">Thông báo</string>
+    <string name="home_today_progress">Tiến độ hôm nay</string>
+    <string name="home_task_progress">%1$d/%2$d việc</string>
+    <string name="home_progress_complete">Xong hết rồi, nghỉ ngơi thôi!</string>
+    <string name="home_progress_half">Đã hơn nửa chặng, cố lên!</string>
+    <string name="home_progress_start">Bắt đầu từ việc nhỏ nhất nhé.</string>
+    <string name="home_study">Học tập</string>
+    <string name="home_life">Cuộc sống</string>
+    <string name="home_remaining_tasks">%1$d việc còn lại</string>
+    <string name="home_today_tasks">Việc hôm nay</string>
+    <string name="home_view_all">Xem tất cả</string>
+    <string name="home_empty_tasks">Hôm nay chưa có việc nào. Bấm + để thêm nhé.</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Trang chủ</string>
+    <string name="nav_tasks">Danh sách</string>
+    <string name="nav_add">Thêm công việc</string>
+    <string name="nav_notifications">Thông báo</string>
+    <string name="nav_settings">Cài đặt</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Danh sách</string>
+    <string name="tasks_pending_count">%1$d việc chưa xong</string>
+    <string name="tasks_search_hint">Tìm công việc...</string>
+    <string name="tasks_all">Tất cả</string>
+    <string name="tasks_pending">CẦN LÀM</string>
+    <string name="tasks_completed">ĐÃ XONG</string>
+    <string name="tasks_empty">Không tìm thấy công việc nào.</string>
+    <string name="tasks_mark_complete">Đánh dấu hoàn thành</string>
+    <string name="tasks_mark_pending">Đánh dấu chưa hoàn thành</string>
+    <string name="tasks_urgent">Gấp</string>
+    <string name="tasks_today">Hôm nay</string>
+    <string name="tasks_tomorrow">Ngày mai</string>
+    <string name="tasks_this_week">Tuần này</string>
+
+
+    <!-- Task editor -->
+    <string name="task_editor_cancel">Hủy</string>
+    <string name="task_editor_new">Việc mới</string>
+    <string name="task_editor_edit">Sửa công việc</string>
+    <string name="task_editor_save">Lưu</string>
+    <string name="task_editor_save_task">Lưu công việc</string>
+    <string name="task_editor_title">Tên công việc</string>
+    <string name="task_editor_note">Ghi chú</string>
+    <string name="task_editor_category">Nhóm</string>
+    <string name="task_editor_date">Ngày</string>
+    <string name="task_editor_time">Giờ</string>
+    <string name="task_editor_remind">Nhắc tôi</string>
+    <string name="task_editor_remind_detail">Trước 15 phút</string>
+    <string name="task_editor_priority">Mức ưu tiên</string>
+    <string name="task_priority_low">Thấp</string>
+    <string name="task_priority_medium">Vừa</string>
+    <string name="task_priority_high">Cao</string>2
+
+
+    <string name="task_editor_title_hint">Ví dụ: Ôn chương 4 – Giải thuật</string>
+    <string name="task_editor_note_hint">Thêm ghi chú (không bắt buộc)</string>
+
 </resources>

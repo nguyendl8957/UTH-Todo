@@ -35,10 +35,20 @@ import androidx.credentials.ClearCredentialStateRequest
 
 import com.example.uthtodo.ui.screens.EmailAuthScreen
 
+import com.example.uthtodo.ui.screens.HomeScreen
+
+import com.example.uthtodo.ui.screens.TasksScreen
+import com.example.uthtodo.ui.screens.TaskFilter
+
+import com.example.uthtodo.ui.screens.TaskEditorScreen
+
 private enum class StartScreen {
     SPLASH,
     ONBOARDING,
     LOGIN,
+    HOME,
+    TASKS,
+    TASK_EDITOR,
     AUTH_TEST,
     EMAIL_AUTH
 }
@@ -109,7 +119,7 @@ class MainActivity : ComponentActivity() {
                                                 verificationResult.isSuccess &&
                                                         verificationResult.getOrNull() == true -> {
                                                     canResendVerification = false
-                                                    currentScreen = StartScreen.AUTH_TEST
+                                                    currentScreen = StartScreen.HOME
                                                 }
 
                                                 verificationResult.isSuccess -> {
@@ -217,6 +227,62 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
+                    StartScreen.HOME -> {
+                        HomeScreen(
+                            user = AuthRepository().currentUser(),
+                            onAvatarClick = {
+                                currentScreen = StartScreen.AUTH_TEST
+                            },
+                            onViewAllClick = {
+                                currentScreen = StartScreen.TASKS
+                            },
+                            onStudyClick = {
+                                currentScreen = StartScreen.TASKS
+                            },
+                            onAddClick = {
+                                currentScreen = StartScreen.TASK_EDITOR
+                            },
+                            onLifeClick = {
+                                currentScreen = StartScreen.TASKS
+                            }
+                        )
+                    }
+
+                    StartScreen.TASKS -> {
+                        TasksScreen(
+                            tasks = emptyList(),
+                            onHomeClick = {
+                                currentScreen = StartScreen.HOME
+                            },
+                            onAddClick = {
+                                currentScreen = StartScreen.TASK_EDITOR
+                            },
+                            onNotificationsClick = {
+                                // Nối màn Thông báo sau.
+                            },
+                            onSettingsClick = {
+                                // Nối màn Cài đặt sau.
+                            },
+                            onTaskClick = { _ ->
+                                // Nối màn Chi tiết công việc sau.
+                            },
+                            onTaskCheckedChange = { _, _ ->
+                                // Nối Repository khi có dữ liệu.
+                            }
+                        )
+                    }
+
+                    StartScreen.TASK_EDITOR -> {
+                        TaskEditorScreen(
+                            onCancel = {
+                                currentScreen = StartScreen.TASKS
+                            },
+                            onSave = { draft ->
+                                // Bước tiếp theo: lưu draft vào Repository/Firestore.
+                                // Hiện chưa báo thành công vì chưa lưu dữ liệu.
+                            }
+                        )
+                    }
 
                     StartScreen.AUTH_TEST -> {
                         AuthTestScreen(
@@ -271,7 +337,7 @@ class MainActivity : ComponentActivity() {
                                                 googleSignInBusy = false
 
                                                 val message: String = if (result.isSuccess) {
-                                                    currentScreen = StartScreen.AUTH_TEST
+                                                    currentScreen = StartScreen.HOME
                                                     getString(R.string.login_google_success)
                                                 } else {
                                                     getString(R.string.login_google_failed)
@@ -309,7 +375,7 @@ class MainActivity : ComponentActivity() {
                                 ) { result ->
                                     if (result.isSuccess) {
                                         googleSignInBusy = false
-                                        currentScreen = StartScreen.AUTH_TEST
+                                        currentScreen = StartScreen.HOME
 
                                         Toast.makeText(
                                             this@MainActivity,
@@ -341,7 +407,7 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     repository.signInAnonymously { result ->
                                         if (result.isSuccess) {
-                                            currentScreen = StartScreen.AUTH_TEST
+                                            currentScreen = StartScreen.HOME
                                         } else {
                                             Toast.makeText(
                                                 this@MainActivity,
