@@ -35,6 +35,7 @@ import kotlinx.coroutines.delay
 import com.example.uthtodo.R
 import com.example.uthtodo.ui.theme.UTHColors
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun SplashScreen(
@@ -86,7 +87,7 @@ fun SplashScreen(
                 )
 
                 Text(
-                    text = "Việc học, việc nhà — gọn gàng mỗi ngày",
+                    text = stringResource(R.string.splash_tagline),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Center,
                     color = Color.White
@@ -104,7 +105,7 @@ fun SplashScreen(
             SplashLoadingBar()
 
             Text(
-                text = "Phiên bản 1.0",
+                text = stringResource(R.string.splash_version),
                 fontSize = 12.sp,
                 color = Color.White
             )

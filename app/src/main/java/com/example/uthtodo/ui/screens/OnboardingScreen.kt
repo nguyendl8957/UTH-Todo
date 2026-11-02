@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
 import com.example.uthtodo.data.OnboardingContent
 import com.example.uthtodo.ui.theme.UTHColors
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun OnboardingScreen(
@@ -123,7 +124,7 @@ fun OnboardingScreen(
 
             TextButton(onClick = onFinished) {
                 Text(
-                    text = "Bỏ qua",
+                    text = stringResource(R.string.onboarding_skip),
                     color = UTHColors.TextSecondary,
                     fontSize = 15.sp
                 )
@@ -157,7 +158,7 @@ fun OnboardingScreen(
                         painter = painterResource(
                             page.illustrationRes
                         ),
-                        contentDescription = page.title,
+                        contentDescription = stringResource(page.titleRes),
                         modifier = Modifier.size(52.dp)
                     )
                 }
@@ -172,7 +173,7 @@ fun OnboardingScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = page.title,
+                text = stringResource(page.titleRes),
                 fontSize = 28.sp,
                 lineHeight = 36.sp,
                 fontWeight = FontWeight.Bold,
@@ -180,7 +181,7 @@ fun OnboardingScreen(
             )
 
             Text(
-                text = page.description,
+                text = stringResource(page.descriptionRes),
                 fontSize = 16.sp,
                 lineHeight = 24.sp,
                 color = UTHColors.TextSecondary
@@ -243,7 +244,7 @@ fun OnboardingScreen(
             )
         ) {
             Text(
-                text = page.buttonText,
+                text = stringResource(page.buttonTextRes),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold
             )

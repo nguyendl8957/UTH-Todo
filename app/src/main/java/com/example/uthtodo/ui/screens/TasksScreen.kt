@@ -100,9 +100,12 @@ fun TasksScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
             item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         text = stringResource(R.string.tasks_title),
@@ -122,38 +125,52 @@ fun TasksScreen(
                 }
             }
 
+
             item {
-                BasicTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = TasksText,
-                        fontSize = 16.sp
-                    ),
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color.White)
-                        .padding(
-                            horizontal = 16.dp,
-                            vertical = 15.dp
+                        .height(44.dp)
+                        .background(
+                            Color(0xFFE9E9EE),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tasks_search),
+                        contentDescription = null,
+                        tint = TasksSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        singleLine = true,
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = TasksText,
+                            fontSize = 16.sp
                         ),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (searchQuery.isEmpty()) {
-                                Text(
-                                    text = stringResource(
-                                        R.string.tasks_search_hint
-                                    ),
-                                    fontSize = 16.sp,
-                                    color = TasksSecondary
-                                )
+                        modifier = Modifier.weight(1f),
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.tasks_search_hint
+                                        ),
+                                        fontSize = 16.sp,
+                                        color = TasksSecondary
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         }
-                    }
-                )
+                    )
+                }
             }
 
             item {

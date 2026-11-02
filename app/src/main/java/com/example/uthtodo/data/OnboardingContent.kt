@@ -7,24 +7,24 @@ object OnboardingContent {
 
     val pages = listOf(
         OnboardingPage(
-            title = "Mọi việc, gọn trong một chỗ",
-            description = "Ghi lại bài tập, việc nhà, lịch hẹn. Không còn quên việc nào.",
+            titleRes = R.string.onboarding_1_title,
+            descriptionRes = R.string.onboarding_1_description,
             illustrationRes = R.drawable.ic_onboarding_1_2,
-            buttonText = "Tiếp tục"
+            buttonTextRes = R.string.onboarding_continue
         ),
 
         OnboardingPage(
-            title = "Chia theo Học tập và Cuộc sống",
-            description = "Mỗi việc có nhóm riêng, nhìn là biết hôm nay cần lo gì.",
+            titleRes = R.string.onboarding_2_title,
+            descriptionRes = R.string.onboarding_2_description,
             illustrationRes = R.drawable.ic_onboarding_2_2,
-            buttonText = "Tiếp tục"
+            buttonTextRes = R.string.onboarding_continue
         ),
 
         OnboardingPage(
-            title = "Nhắc đúng lúc",
-            description = "Bật thông báo để UTH Todo nhắc bạn trước hạn chót.",
+            titleRes = R.string.onboarding_3_title,
+            descriptionRes = R.string.onboarding_3_description,
             illustrationRes = R.drawable.ic_onboarding_3_2,
-            buttonText = "Bắt đầu ngay"
+            buttonTextRes = R.string.onboarding_get_started
         )
     )
 }

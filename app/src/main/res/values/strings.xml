@@ -126,4 +126,24 @@
     <string name="task_editor_title_hint">Ví dụ: Ôn chương 4 – Giải thuật</string>
     <string name="task_editor_note_hint">Thêm ghi chú (không bắt buộc)</string>
 
+    <string name="task_update_failed">Không thể cập nhật công việc</string>
+
+    <!-- Task detail -->
+    <string name="detail_edit">Sửa</string>
+    <string name="detail_due">Hạn chót</string>
+    <string name="detail_reminder">Nhắc nhở</string>
+    <string name="detail_reminder_off">Đã tắt</string>
+    <string name="detail_priority_format">Ưu tiên %1$s</string>
+    <string name="detail_subtasks">Việc nhỏ</string>
+    <string name="detail_subtasks_empty">Chưa có việc nhỏ</string>
+    <string name="detail_mark_done">Đánh dấu hoàn thành</string>
+    <string name="detail_mark_pending">Đánh dấu chưa hoàn thành</string>
+    <string name="detail_delete">Xóa công việc</string>
+    <string name="detail_delete_title">Xóa công việc?</string>
+    <string name="detail_delete_message">Bạn có chắc muốn xóa không?</string>
+    <string name="detail_saved">Đã lưu thay đổi</string>
+    <string name="detail_deleted">Đã xóa công việc</string>
+    <string name="detail_operation_failed">Không thể thực hiện thao tác</string>
+    <string name="detail_loading">Đang tải chi tiết công việc...</string>
+
 </resources>

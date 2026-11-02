@@ -47,13 +47,24 @@ enum class HomeTaskCategory {
     STUDY, LIFE
 }
 
+
 data class HomeTask(
     val id: String,
     val title: String,
     val category: HomeTaskCategory,
-    val date: String, // yyyy-MM-dd
-    val time: String, // HH:mm
-    val done: Boolean
+    val date: String,
+    val time: String,
+    val done: Boolean,
+    val note: String = "",
+    val priority: String = "medium",
+    val remind: Boolean = true,
+    val subtasks: List<HomeSubtask> = emptyList()
+)
+
+data class HomeSubtask(
+    val id: String,
+    val title: String,
+    val done: Boolean = false
 )
 
 @Composable

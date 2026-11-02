@@ -1,10 +1,11 @@
 package com.example.uthtodo.model
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 
 data class OnboardingPage(
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
     @DrawableRes val illustrationRes: Int,
-    val buttonText: String
+    @StringRes val buttonTextRes: Int
 )

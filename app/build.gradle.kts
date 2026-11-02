@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -51,4 +52,19 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    // Quản lý phiên bản các thư viện Firebase
+    implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
+    // Firebase Authentication: đăng nhập, đăng ký, quản lý tài khoản
+    implementation("com.google.firebase:firebase-auth")
+    // Firebase Analytics: thống kê hoạt động ứng dụng
+    implementation("com.google.firebase:firebase-analytics")
+
+    // Quản lý thông tin đăng nhập và giao diện chọn tài khoản
+    implementation("androidx.credentials:credentials:1.6.0")
+    // Kết nối Credential Manager với Google Play Services
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+    // Hỗ trợ lấy Google ID token
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    implementation("com.google.firebase:firebase-firestore")
 }

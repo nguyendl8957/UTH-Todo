@@ -1,46 +1,47 @@
 package com.example.uthtodo
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-
-import com.example.uthtodo.ui.screens.OnboardingScreen
-import com.example.uthtodo.ui.screens.SplashScreen
-import com.example.uthtodo.ui.theme.UTHTodoTheme
 import androidx.compose.ui.res.stringResource
-
-import android.widget.Toast
-import com.example.uthtodo.ui.screens.LoginScreen
-
+import androidx.compose.ui.text.style.TextAlign
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.lifecycle.lifecycleScope
 import com.example.uthtodo.data.auth.AuthRepository
 import com.example.uthtodo.data.auth.GoogleSignInClient
-import kotlinx.coroutines.launch
-
+import com.example.uthtodo.data.task.TaskRepository
+import com.example.uthtodo.model.TaskCategory
+import com.example.uthtodo.model.TaskDraft
+import com.example.uthtodo.model.TaskPriority
 import com.example.uthtodo.ui.screens.AuthTestScreen
-import androidx.credentials.CredentialManager
-import androidx.credentials.ClearCredentialStateRequest
-
 import com.example.uthtodo.ui.screens.EmailAuthScreen
-
 import com.example.uthtodo.ui.screens.HomeScreen
-
-import com.example.uthtodo.ui.screens.TasksScreen
-import com.example.uthtodo.ui.screens.TaskFilter
-
+import com.example.uthtodo.ui.screens.HomeTask
+import com.example.uthtodo.ui.screens.HomeTaskCategory
+import com.example.uthtodo.ui.screens.LoginScreen
+import com.example.uthtodo.ui.screens.OnboardingScreen
+import com.example.uthtodo.ui.screens.SplashScreen
+import com.example.uthtodo.ui.screens.TaskDetailScreen
 import com.example.uthtodo.ui.screens.TaskEditorScreen
+import com.example.uthtodo.ui.screens.TasksScreen
+import com.example.uthtodo.ui.theme.UTHTodoTheme
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 private enum class StartScreen {
     SPLASH,
@@ -49,6 +50,7 @@ private enum class StartScreen {
     HOME,
     TASKS,
     TASK_EDITOR,
+    TASK_DETAIL,
     AUTH_TEST,
     EMAIL_AUTH
 }
@@ -67,6 +69,55 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by rememberSaveable {
                     mutableStateOf(StartScreen.SPLASH)
                 }
+                var selectedTaskId by rememberSaveable {
+                    mutableStateOf<String?>(null)
+                }
+
+
+                val tasks = remember {
+                    mutableStateListOf<HomeTask>()
+                }
+
+                val taskRepository = remember {
+                    TaskRepository()
+                }
+
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+                val isTaskArea = currentScreen == StartScreen.HOME ||
+                        currentScreen == StartScreen.TASKS ||
+                        currentScreen == StartScreen.TASK_EDITOR ||
+                        currentScreen == StartScreen.TASK_DETAIL ||
+                        currentScreen == StartScreen.AUTH_TEST
+
+                DisposableEffect(userId, isTaskArea) {
+                    if (userId == null || !isTaskArea) {
+                        tasks.clear()
+                        onDispose { }
+                    } else {
+                        tasks.clear()
+
+                        val listener = taskRepository.observeTasks { result ->
+                            result.onSuccess { firebaseTasks ->
+                                tasks.clear()
+                                tasks.addAll(firebaseTasks)
+                            }
+
+                            result.onFailure { error ->
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    error.localizedMessage ?: "Không thể tải công việc",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+
+                        onDispose {
+                            listener?.remove()
+                        }
+                    }
+                }
+
                 var canResendVerification by rememberSaveable {
                     mutableStateOf(false)
                 }
@@ -230,6 +281,7 @@ class MainActivity : ComponentActivity() {
                     StartScreen.HOME -> {
                         HomeScreen(
                             user = AuthRepository().currentUser(),
+                            tasks = tasks,
                             onAvatarClick = {
                                 currentScreen = StartScreen.AUTH_TEST
                             },
@@ -240,7 +292,28 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = StartScreen.TASKS
                             },
                             onAddClick = {
+                                selectedTaskId = null
                                 currentScreen = StartScreen.TASK_EDITOR
+                            },
+                            onTaskClick = { taskId ->
+                                selectedTaskId = taskId
+                                currentScreen = StartScreen.TASK_DETAIL
+                            },
+
+                            onTaskCheckedChange = { taskId, completed ->
+                                taskRepository.updateTaskDone(
+                                    taskId = taskId,
+                                    done = completed
+                                ) { result ->
+                                    result.onFailure { error ->
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            error.localizedMessage
+                                                ?: getString(R.string.task_update_failed),
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
                             },
                             onLifeClick = {
                                 currentScreen = StartScreen.TASKS
@@ -250,11 +323,12 @@ class MainActivity : ComponentActivity() {
 
                     StartScreen.TASKS -> {
                         TasksScreen(
-                            tasks = emptyList(),
+                            tasks = tasks,
                             onHomeClick = {
                                 currentScreen = StartScreen.HOME
                             },
                             onAddClick = {
+                                selectedTaskId = null
                                 currentScreen = StartScreen.TASK_EDITOR
                             },
                             onNotificationsClick = {
@@ -263,23 +337,178 @@ class MainActivity : ComponentActivity() {
                             onSettingsClick = {
                                 // Nối màn Cài đặt sau.
                             },
-                            onTaskClick = { _ ->
-                                // Nối màn Chi tiết công việc sau.
+                            onTaskClick = { taskId ->
+                                selectedTaskId = taskId
+                                currentScreen = StartScreen.TASK_DETAIL
                             },
-                            onTaskCheckedChange = { _, _ ->
-                                // Nối Repository khi có dữ liệu.
+
+
+                            onTaskCheckedChange = { taskId, completed ->
+                                taskRepository.updateTaskDone(
+                                    taskId = taskId,
+                                    done = completed
+                                ) { result ->
+                                    result.onFailure { error ->
+                                        Toast.makeText(
+                                            this@MainActivity,
+                                            error.localizedMessage ?: "Không thể cập nhật công việc",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
                             }
                         )
                     }
 
+
+                    StartScreen.TASK_DETAIL -> {
+                        val selectedTask = tasks.firstOrNull {
+                            it.id == selectedTaskId
+                        }
+
+                        if (selectedTask == null) {
+                            Text(
+                                text = stringResource(R.string.detail_loading),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .wrapContentSize(),
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            TaskDetailScreen(
+                                task = selectedTask,
+                                onBack = {
+                                    currentScreen = StartScreen.TASKS
+                                },
+                                onEdit = {
+                                    currentScreen = StartScreen.TASK_EDITOR
+                                },
+                                onToggleDone = {
+                                    taskRepository.updateTaskDone(
+                                        taskId = selectedTask.id,
+                                        done = !selectedTask.done
+                                    ) { result ->
+                                        result.onFailure { error ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                error.localizedMessage
+                                                    ?: getString(
+                                                        R.string.detail_operation_failed
+                                                    ),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                },
+                                onDelete = {
+                                    taskRepository.deleteTask(
+                                        taskId = selectedTask.id
+                                    ) { result ->
+                                        result.onSuccess {
+                                            selectedTaskId = null
+                                            currentScreen = StartScreen.TASKS
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                getString(R.string.detail_deleted),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                        result.onFailure { error ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                error.localizedMessage
+                                                    ?: getString(
+                                                        R.string.detail_operation_failed
+                                                    ),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+
                     StartScreen.TASK_EDITOR -> {
+                        val taskToEdit = tasks.firstOrNull {
+                            it.id == selectedTaskId
+                        }
+
+                        val initialDraft = taskToEdit?.let { task ->
+                            TaskDraft(
+                                title = task.title,
+                                note = task.note,
+                                category = when (task.category) {
+                                    HomeTaskCategory.STUDY -> TaskCategory.STUDY
+                                    HomeTaskCategory.LIFE -> TaskCategory.LIFE
+                                },
+                                date = task.date,
+                                time = task.time,
+                                remind = task.remind,
+                                priority = when (task.priority) {
+                                    "low" -> TaskPriority.LOW
+                                    "high" -> TaskPriority.HIGH
+                                    else -> TaskPriority.MEDIUM
+                                }
+                            )
+                        }
+
                         TaskEditorScreen(
+                            initialDraft = initialDraft,
                             onCancel = {
-                                currentScreen = StartScreen.TASKS
+                                currentScreen = if (taskToEdit != null) {
+                                    StartScreen.TASK_DETAIL
+                                } else {
+                                    StartScreen.TASKS
+                                }
                             },
                             onSave = { draft ->
-                                // Bước tiếp theo: lưu draft vào Repository/Firestore.
-                                // Hiện chưa báo thành công vì chưa lưu dữ liệu.
+                                if (taskToEdit == null) {
+                                    taskRepository.addTask(draft) { result ->
+                                        result.onSuccess {
+                                            selectedTaskId = null
+                                            currentScreen = StartScreen.TASKS
+                                        }
+
+                                        result.onFailure { error ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                error.localizedMessage
+                                                    ?: getString(
+                                                        R.string.detail_operation_failed
+                                                    ),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                } else {
+                                    taskRepository.updateTask(
+                                        taskId = taskToEdit.id,
+                                        draft = draft
+                                    ) { result ->
+                                        result.onSuccess {
+                                            currentScreen = StartScreen.TASK_DETAIL
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                getString(R.string.detail_saved),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+
+                                        result.onFailure { error ->
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                error.localizedMessage
+                                                    ?: getString(
+                                                        R.string.detail_operation_failed
+                                                    ),
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                                }
                             }
                         )
                     }
