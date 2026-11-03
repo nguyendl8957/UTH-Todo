@@ -152,17 +152,45 @@ class MainActivity : ComponentActivity() {
 
                     when (currentScreen) {
 
+
                         StartScreen.SPLASH -> {
                             SplashScreen(
                                 onFinished = {
-                                    currentScreen = StartScreen.ONBOARDING
+                                    val currentUser =
+                                        FirebaseAuth.getInstance().currentUser
+
+                                    val preferences = getSharedPreferences(
+                                        "uth_todo_startup",
+                                        MODE_PRIVATE
+                                    )
+
+                                    val onboardingCompleted =
+                                        preferences.getBoolean(
+                                            "onboarding_completed",
+                                            false
+                                        )
+
+                                    currentScreen = when {
+                                        currentUser != null -> StartScreen.HOME
+                                        onboardingCompleted -> StartScreen.LOGIN
+                                        else -> StartScreen.ONBOARDING
+                                    }
                                 }
                             )
                         }
 
+
                         StartScreen.ONBOARDING -> {
                             OnboardingScreen(
                                 onFinished = {
+                                    getSharedPreferences(
+                                        "uth_todo_startup",
+                                        MODE_PRIVATE
+                                    )
+                                        .edit()
+                                        .putBoolean("onboarding_completed", true)
+                                        .apply()
+
                                     currentScreen = StartScreen.LOGIN
                                 }
                             )
