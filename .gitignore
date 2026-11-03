@@ -16,3 +16,4 @@ local.properties
 .kotlin/
 **/build/
 /.idea/deviceManager.xml
+/app/google-services.json
