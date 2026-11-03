@@ -120,7 +120,7 @@
     <string name="task_editor_priority">Mức ưu tiên</string>
     <string name="task_priority_low">Thấp</string>
     <string name="task_priority_medium">Vừa</string>
-    <string name="task_priority_high">Cao</string>2
+    <string name="task_priority_high">Cao</string>
 
 
     <string name="task_editor_title_hint">Ví dụ: Ôn chương 4 – Giải thuật</string>
@@ -146,4 +146,54 @@
     <string name="detail_operation_failed">Không thể thực hiện thao tác</string>
     <string name="detail_loading">Đang tải chi tiết công việc...</string>
 
+    <!-- Subtasks -->
+    <string name="subtask_add">Thêm việc nhỏ</string>
+    <string name="subtask_add_title">Thêm việc nhỏ</string>
+    <string name="subtask_edit_title">Sửa việc nhỏ</string>
+    <string name="subtask_name">Tên việc nhỏ</string>
+    <string name="subtask_delete_title">Xóa việc nhỏ?</string>
+    <string name="subtask_delete_message">Bạn có chắc muốn xóa việc nhỏ này?</string>
+    <string name="detail_saved_button">Lưu</string>
+    <string name="subtask_save_failed">Không thể lưu việc nhỏ</string>
+
+
+    <!-- Settings -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_appearance">Giao diện</string>
+    <string name="settings_light">Sáng</string>
+    <string name="settings_dark">Tối</string>
+    <string name="settings_system">Tự động</string>
+    <string name="settings_accent">Màu chủ đạo</string>
+    <string name="settings_notifications">Thông báo</string>
+    <string name="settings_reminders">Nhắc việc</string>
+    <string name="settings_reminders_desc">Báo trước hạn chót 15 phút</string>
+    <string name="settings_sound">Âm thanh</string>
+    <string name="settings_sound_desc">Phát âm khi có thông báo</string>
+    <string name="settings_summary">Tổng kết cuối ngày</string>
+    <string name="settings_summary_desc">Gửi lúc 21:00 mỗi tối</string>
+    <string name="settings_general">Chung</string>
+    <string name="settings_language">Ngôn ngữ</string>
+    <string name="settings_vietnamese">Tiếng Việt</string>
+    <string name="settings_about">Giới thiệu UTH Todo</string>
+    <string name="settings_version">Phiên bản 1.0</string>
+    <string name="settings_home">Trang chủ</string>
+    <string name="settings_tasks">Danh sách</string>
+
+    <string name="settings_add_task">Thêm công việc</string>
+
+    <string name="uth_profile_title">Hồ sơ</string>
+    <string name="uth_profile_guest">Khách</string>
+    <string name="uth_profile_unlinked">Chưa liên kết tài khoản</string>
+    <string name="uth_profile_connected">Đã đăng nhập</string>
+    <string name="uth_profile_completed">Việc đã xong</string>
+    <string name="uth_profile_pending">Đang chờ</string>
+    <string name="uth_profile_percentage">Hoàn thành</string>
+    <string name="uth_profile_week">Tuần này</string>
+    <string name="uth_profile_chart_unavailable">Chưa có lịch sử hoàn thành theo ngày để vẽ biểu đồ tuần.</string>
+    <string name="uth_profile_signout">Đăng xuất</string>
+    <string name="uth_subtasks_save_failed">Không thể lưu việc nhỏ</string>
+    <string name="uth_notifications_empty">Chưa có thông báo nào.</string>
+
+    <string name="uth_reminder_body">Một công việc sắp đến hạn.</string>
+    <string name="uth_daily_summary_body">Đã xong %1$d việc · Còn %2$d việc</string>
 </resources>

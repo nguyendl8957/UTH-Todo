@@ -1,4 +1,3 @@
-
 package com.example.uthtodo.ui.screens
 
 import androidx.compose.foundation.background
@@ -26,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
+import com.example.uthtodo.ui.components.TodoBottomBar
+import com.example.uthtodo.ui.components.TodoTab
 import com.google.firebase.auth.FirebaseUser
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,10 +34,6 @@ import java.util.Locale
 
 import androidx.compose.ui.draw.shadow
 
-private val Blue = Color(0xFF2F5BEA)
-private val Background = Color(0xFFF5F5F7)
-private val TextPrimary = Color(0xFF1C1C1E)
-private val TextSecondary = Color(0xFF6B6B70)
 private val StudyBackground = Color(0xFFE6EDFF)
 private val StudyText = Color(0xFF1F4FD1)
 private val LifeBackground = Color(0xFFFFEBD9)
@@ -58,7 +55,8 @@ data class HomeTask(
     val note: String = "",
     val priority: String = "medium",
     val remind: Boolean = true,
-    val subtasks: List<HomeSubtask> = emptyList()
+    val subtasks: List<HomeSubtask> = emptyList(),
+    val completedAt: Date? = null
 )
 
 data class HomeSubtask(
@@ -131,7 +129,7 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         // Nội dung có thể cuộn, thanh menu nằm cố định ở dưới.
@@ -178,13 +176,13 @@ fun HomeScreen(
                         Text(
                             text = displayDate,
                             fontSize = 14.sp,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = greeting,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onBackground,
                             maxLines = 2
                         )
                     }
@@ -193,7 +191,7 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(44.dp)
                             .clip(CircleShape)
-                            .background(Color.White)
+                            .background(MaterialTheme.colorScheme.surface)
                             .clickable(onClick = onNotificationsClick),
                         contentAlignment = Alignment.Center
                     ) {
@@ -205,7 +203,7 @@ fun HomeScreen(
                                 R.string.home_notifications
                             ),
                             modifier = Modifier.size(22.dp),
-                            tint = TextPrimary
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
 
                         if (hasUnreadNotifications) {
@@ -274,7 +272,7 @@ fun HomeScreen(
                         ),
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onBackground
                     )
 
                     Text(
@@ -283,7 +281,7 @@ fun HomeScreen(
                         ),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Blue,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .clickable(onClick = onViewAllClick)
                             .padding(8.dp)
@@ -296,8 +294,7 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                Color.White,
+                            .background(MaterialTheme.colorScheme.surface,
                                 RoundedCornerShape(16.dp)
                             )
                             .padding(20.dp),
@@ -308,7 +305,7 @@ fun HomeScreen(
                                 R.string.home_empty_tasks
                             ),
                             fontSize = 14.sp,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -328,7 +325,8 @@ fun HomeScreen(
             }
         }
 
-        HomeBottomBar(
+        TodoBottomBar(
+            selectedTab = TodoTab.HOME,
             onHomeClick = {},
             onTasksClick = onViewAllClick,
             onAddClick = onAddClick,
@@ -363,7 +361,7 @@ private fun HomeProgressCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Blue, RoundedCornerShape(22.dp))
+            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(22.dp))
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -431,7 +429,7 @@ private fun HomeCategoryCard(
 ) {
     Column(
         modifier = modifier
-            .background(Color.White, RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -457,7 +455,7 @@ private fun HomeCategoryCard(
             text = title,
             fontWeight = FontWeight.SemiBold,
             fontSize = 15.sp,
-            color = TextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Text(
@@ -466,7 +464,7 @@ private fun HomeCategoryCard(
                 remaining
             ),
             fontSize = 13.sp,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -482,7 +480,7 @@ private fun HomeTaskRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .padding(
                 start = 8.dp,
                 end = 10.dp,
@@ -503,7 +501,7 @@ private fun HomeTaskRow(
                     .size(26.dp)
                     .then(
                         if (task.done) {
-                            Modifier.background(Blue, CircleShape)
+                            Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
                         } else {
                             Modifier.border(
                                 2.dp,
@@ -546,9 +544,9 @@ private fun HomeTaskRow(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (task.done) {
-                        TextSecondary
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
-                        TextPrimary
+                        MaterialTheme.colorScheme.onBackground
                     },
                     textDecoration = if (task.done) {
                         TextDecoration.LineThrough
@@ -592,7 +590,7 @@ private fun HomeTaskRow(
 
                     Text(
                         text = task.time,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -607,126 +605,5 @@ private fun HomeTaskRow(
                 modifier = Modifier.size(18.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun HomeBottomBar(
-    onHomeClick: () -> Unit,
-    onTasksClick: () -> Unit,
-    onAddClick: () -> Unit,
-    onNotificationsClick: () -> Unit,
-    onSettingsClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .navigationBarsPadding()
-            .height(70.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        HomeNavItem(
-            icon = R.drawable.ic_nav_home,
-            label = stringResource(R.string.nav_home),
-            active = true,
-            onClick = onHomeClick,
-            modifier = Modifier.weight(1f)
-        )
-
-        HomeNavItem(
-            icon = R.drawable.ic_nav_tasks,
-            label = stringResource(R.string.nav_tasks),
-            active = false,
-            onClick = onTasksClick,
-            modifier = Modifier.weight(1f)
-        )
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .offset(y = (-16).dp)
-                    .size(56.dp)
-                    .shadow(
-                        elevation = 12.dp,
-                        shape = CircleShape,
-                        clip = false
-                    )
-                    .clip(CircleShape)
-                    .background(Blue)
-                    .clickable(onClick = onAddClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(
-                        R.drawable.ic_nav_add
-                    ),
-                    contentDescription = stringResource(
-                        R.string.nav_add
-                    ),
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        HomeNavItem(
-            icon = R.drawable.ic_nav_bell,
-            label = stringResource(R.string.nav_notifications),
-            active = false,
-            onClick = onNotificationsClick,
-            modifier = Modifier.weight(1f)
-        )
-
-        HomeNavItem(
-            icon = R.drawable.ic_nav_settings,
-            label = stringResource(R.string.nav_settings),
-            active = false,
-            onClick = onSettingsClick,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun HomeNavItem(
-    icon: Int,
-    label: String,
-    active: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(vertical = 5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = if (active) Blue else TextSecondary,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Text(
-            text = label,
-            color = if (active) Blue else TextSecondary,
-            fontSize = 11.sp,
-            fontWeight = if (active) {
-                FontWeight.SemiBold
-            } else {
-                FontWeight.Medium
-            },
-            maxLines = 1
-        )
     }
 }

@@ -1,52 +1,42 @@
 package com.example.uthtodo.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = UTHColors.Primary,
-    onPrimary = UTHColors.Surface,
-    background = UTHColors.Background,
-    onBackground = UTHColors.TextPrimary,
-    surface = UTHColors.Surface,
-    onSurface = UTHColors.TextPrimary,
-    outline = UTHColors.Border
-)
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun UTHTodoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
+    accentColor: Color = Color(0xFF2F5BEA),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    // Dynamic Material You deliberately disabled: professor's four explicit accents win.
+    val scheme = if (darkTheme) {
+        darkColorScheme(
+            primary = accentColor,
+            onPrimary = Color.White,
+            background = Color(0xFF121216),
+            onBackground = Color(0xFFF5F5F7),
+            surface = Color(0xFF222226),
+            onSurface = Color(0xFFF5F5F7),
+            onSurfaceVariant = Color(0xFFBABAC0),
+            outline = Color(0xFF53535A)
+        )
+    } else {
+        lightColorScheme(
+            primary = accentColor,
+            onPrimary = Color.White,
+            background = Color(0xFFF5F5F7),
+            onBackground = Color(0xFF1C1C1E),
+            surface = Color.White,
+            onSurface = Color(0xFF1C1C1E),
+            onSurfaceVariant = Color(0xFF6B6B70),
+            outline = Color(0xFFD8D8DE)
+        )
     }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    MaterialTheme(colorScheme = scheme, typography = Typography, content = content)
 }

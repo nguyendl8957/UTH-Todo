@@ -1,47 +1,34 @@
 package com.example.uthtodo.data.task
 
 import com.example.uthtodo.model.TaskDraft
+import com.example.uthtodo.ui.screens.HomeSubtask
 import com.example.uthtodo.ui.screens.HomeTask
 import com.example.uthtodo.ui.screens.HomeTaskCategory
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-
-import com.example.uthtodo.ui.screens.HomeSubtask
+import java.util.UUID
 
 class TaskRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
+    private fun tasksCollection(): CollectionReference? = auth.currentUser?.uid?.let { uid ->
+        db.collection("users").document(uid).collection("tasks")
+    }
 
-    private fun tasksCollection() =
-        auth.currentUser?.uid?.let { uid ->
-            db.collection("users")
-                .document(uid)
-                .collection("tasks")
+    private fun notSignedIn() = IllegalStateException("Chưa đăng nhập Firebase")
+
+    fun addTask(draft: TaskDraft, onResult: (Result<String>) -> Unit) {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return
         }
-
-    // CREATE: Thêm công việc thật vào Firestore
-    fun addTask(
-        draft: TaskDraft,
-        onResult: (Result<String>) -> Unit
-    ) {
-        val collection = tasksCollection()
-
-        if (collection == null) {
-            onResult(
-                Result.failure(
-                    IllegalStateException("Chưa đăng nhập Firebase")
-                )
-            )
-            return
-        }
-
-        val document = collection.document()
-
-        val taskData = hashMapOf(
-            "title" to draft.title,
-            "note" to draft.note,
+        val doc = collection.document()
+        val data = hashMapOf(
+            "title" to draft.title.trim(),
+            "note" to draft.note.trim(),
             "category" to draft.category.value,
             "date" to draft.date,
             "time" to draft.time,
@@ -49,144 +36,73 @@ class TaskRepository(
             "priority" to draft.priority.value,
             "done" to false,
             "subtasks" to emptyList<Map<String, Any>>(),
-            "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+            "createdAt" to FieldValue.serverTimestamp()
         )
-
-        document.set(taskData)
-            .addOnSuccessListener {
-                onResult(Result.success(document.id))
-            }
-            .addOnFailureListener { error ->
-                onResult(Result.failure(error))
-            }
+        doc.set(data).addOnSuccessListener { onResult(Result.success(doc.id)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
     }
 
-    // READ: Theo dõi công việc theo thời gian thực
-    fun observeTasks(
-        onResult: (Result<List<HomeTask>>) -> Unit
-    ): ListenerRegistration? {
-        val collection = tasksCollection()
-
-        if (collection == null) {
-            onResult(
-                Result.failure(
-                    IllegalStateException("Chưa đăng nhập Firebase")
-                )
-            )
-            return null
+    fun observeTasks(onResult: (Result<List<HomeTask>>) -> Unit): ListenerRegistration? {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return null
         }
-
         return collection.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                onResult(Result.failure(error))
-                return@addSnapshotListener
+                onResult(Result.failure(error)); return@addSnapshotListener
             }
-
             if (snapshot == null) {
-                onResult(
-                    Result.failure(
-                        IllegalStateException("Không nhận được dữ liệu")
-                    )
-                )
+                onResult(Result.failure(IllegalStateException("Không nhận được dữ liệu")))
                 return@addSnapshotListener
             }
-
-            val tasks = snapshot.documents.mapNotNull { document ->
-                val title = document.getString("title")
-                    ?: return@mapNotNull null
-
-                val category = when (
-                    document.getString("category")
-                ) {
+            val tasks = snapshot.documents.mapNotNull { doc ->
+                val title = doc.getString("title") ?: return@mapNotNull null
+                val category = when (doc.getString("category")) {
                     "study" -> HomeTaskCategory.STUDY
                     "life" -> HomeTaskCategory.LIFE
                     else -> return@mapNotNull null
                 }
-
-
-                val subtasks = (document.get("subtasks") as? List<*>)
-                    .orEmpty()
-                    .mapNotNull { raw ->
-                        val item = raw as? Map<*, *>
-                            ?: return@mapNotNull null
-
-                        val subtaskId = item["id"] as? String
-                            ?: return@mapNotNull null
-
-                        val subtaskTitle = item["title"] as? String
-                            ?: return@mapNotNull null
-
-                        HomeSubtask(
-                            id = subtaskId,
-                            title = subtaskTitle,
-                            done = item["done"] as? Boolean ?: false
-                        )
-                    }
-
+                val subtasks = (doc.get("subtasks") as? List<*>).orEmpty().mapNotNull { raw ->
+                    val map = raw as? Map<*, *> ?: return@mapNotNull null
+                    val id = map["id"] as? String ?: return@mapNotNull null
+                    val subtitle = map["title"] as? String ?: return@mapNotNull null
+                    HomeSubtask(id, subtitle, map["done"] as? Boolean ?: false)
+                }
                 HomeTask(
-                    id = document.id,
+                    id = doc.id,
                     title = title,
                     category = category,
-                    date = document.getString("date").orEmpty(),
-                    time = document.getString("time").orEmpty(),
-                    done = document.getBoolean("done") ?: false,
-                    note = document.getString("note").orEmpty(),
-                    priority = document.getString("priority") ?: "medium",
-                    remind = document.getBoolean("remind") ?: true,
-                    subtasks = subtasks
+                    date = doc.getString("date").orEmpty(),
+                    time = doc.getString("time").orEmpty(),
+                    done = doc.getBoolean("done") ?: false,
+                    note = doc.getString("note").orEmpty(),
+                    priority = doc.getString("priority") ?: "medium",
+                    remind = doc.getBoolean("remind") ?: true,
+                    subtasks = subtasks,
+                    completedAt = doc.getTimestamp("completedAt")?.toDate()
                 )
             }
-
             onResult(Result.success(tasks))
         }
     }
 
-    // UPDATE: Đánh dấu hoàn thành / chưa hoàn thành
-    fun updateTaskDone(
-        taskId: String,
-        done: Boolean,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        val collection = tasksCollection()
-
-        if (collection == null) {
-            onResult(
-                Result.failure(
-                    IllegalStateException("Chưa đăng nhập Firebase")
-                )
-            )
-            return
+    fun updateTaskDone(taskId: String, done: Boolean, onResult: (Result<Unit>) -> Unit) {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return
         }
-
-        collection.document(taskId)
-            .update("done", done)
-            .addOnSuccessListener {
-                onResult(Result.success(Unit))
-            }
-            .addOnFailureListener { error ->
-                onResult(Result.failure(error))
-            }
+        val fields: Map<String, Any> = mapOf(
+            "done" to done,
+            "completedAt" to if (done) FieldValue.serverTimestamp() else FieldValue.delete()
+        )
+        collection.document(taskId).update(fields)
+            .addOnSuccessListener { onResult(Result.success(Unit)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
     }
 
-
-    // UPDATE: Sửa toàn bộ nội dung công việc
-    fun updateTask(
-        taskId: String,
-        draft: TaskDraft,
-        onResult: (Result<Unit>) -> Unit
-    ) {
-        val collection = tasksCollection()
-
-        if (collection == null) {
-            onResult(
-                Result.failure(
-                    IllegalStateException("Chưa đăng nhập Firebase")
-                )
-            )
-            return
+    fun updateTask(taskId: String, draft: TaskDraft, onResult: (Result<Unit>) -> Unit) {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return
         }
-
-        val updates = mapOf(
+        val fields = mapOf(
             "title" to draft.title.trim(),
             "note" to draft.note.trim(),
             "category" to draft.category.value,
@@ -195,40 +111,45 @@ class TaskRepository(
             "remind" to draft.remind,
             "priority" to draft.priority.value
         )
-
-        collection.document(taskId)
-            .update(updates)
-            .addOnSuccessListener {
-                onResult(Result.success(Unit))
-            }
-            .addOnFailureListener { error ->
-                onResult(Result.failure(error))
-            }
+        collection.document(taskId).update(fields)
+            .addOnSuccessListener { onResult(Result.success(Unit)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
     }
 
-    // DELETE: Xóa công việc khỏi Firestore
-    fun deleteTask(
+    fun deleteTask(taskId: String, onResult: (Result<Unit>) -> Unit) {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return
+        }
+        collection.document(taskId).delete()
+            .addOnSuccessListener { onResult(Result.success(Unit)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
+    }
+
+    fun updateSubtasks(taskId: String, subtasks: List<HomeSubtask>, onResult: (Result<Unit>) -> Unit) {
+        val collection = tasksCollection() ?: run {
+            onResult(Result.failure(notSignedIn())); return
+        }
+        val data = subtasks.map { mapOf(
+            "id" to it.id,
+            "title" to it.title,
+            "done" to it.done
+        ) }
+        collection.document(taskId).update("subtasks", data)
+            .addOnSuccessListener { onResult(Result.success(Unit)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
+    }
+
+    fun addSubtask(
         taskId: String,
+        currentSubtasks: List<HomeSubtask>,
+        title: String,
         onResult: (Result<Unit>) -> Unit
     ) {
-        val collection = tasksCollection()
-
-        if (collection == null) {
-            onResult(
-                Result.failure(
-                    IllegalStateException("Chưa đăng nhập Firebase")
-                )
-            )
+        val trimmed = title.trim()
+        if (trimmed.isBlank()) {
+            onResult(Result.failure(IllegalArgumentException("Tên việc nhỏ không được để trống")))
             return
         }
-
-        collection.document(taskId)
-            .delete()
-            .addOnSuccessListener {
-                onResult(Result.success(Unit))
-            }
-            .addOnFailureListener { error ->
-                onResult(Result.failure(error))
-            }
+        updateSubtasks(taskId, currentSubtasks + HomeSubtask(UUID.randomUUID().toString(), trimmed), onResult)
     }
 }

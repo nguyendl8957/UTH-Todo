@@ -29,6 +29,8 @@ import com.example.uthtodo.R
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.material3.OutlinedTextField
+import java.util.UUID
 
 private val DetailBlue = Color(0xFF2F5BEA)
 private val DetailBackground = Color(0xFFF5F5F7)
@@ -43,7 +45,8 @@ fun TaskDetailScreen(
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onToggleDone: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSubtasksChange: (List<HomeSubtask>) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -264,22 +267,10 @@ fun TaskDetailScreen(
             }
 
             if (task.note.isNotBlank()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DetailSectionTitle(stringResource(R.string.task_editor_note))
-                    Text(
-                        task.note,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Color.White,
-                                RoundedCornerShape(16.dp)
-                            )
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        fontSize = 15.sp,
-                        lineHeight = 22.sp,
-                        color = DetailText
-                    )
-                }
+                DetailSubtasksSection(
+                    task = task,
+                    onSubtasksChange = onSubtasksChange
+                )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -455,3 +446,305 @@ private fun formatDetailDate(date: String): String {
         )
     }
 }
+
+
+@Composable
+private fun DetailSubtasksSection(
+    task: HomeTask,
+    onSubtasksChange: (List<HomeSubtask>) -> Unit
+) {
+    var editorVisible by remember { mutableStateOf(false) }
+    var editingId by remember { mutableStateOf<String?>(null) }
+    var inputTitle by remember { mutableStateOf("") }
+
+    var deletingId by remember { mutableStateOf<String?>(null) }
+
+    val completed = task.subtasks.count { it.done }
+
+    // Hộp thoại thêm / sửa việc nhỏ
+    if (editorVisible) {
+        AlertDialog(
+            onDismissRequest = { editorVisible = false },
+            title = {
+                Text(
+                    stringResource(
+                        if (editingId == null)
+                            R.string.subtask_add_title
+                        else
+                            R.string.subtask_edit_title
+                    )
+                )
+            },
+            text = {
+                OutlinedTextField(
+                    value = inputTitle,
+                    onValueChange = { inputTitle = it },
+                    label = {
+                        Text(stringResource(R.string.subtask_name))
+                    },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = inputTitle.isNotBlank(),
+                    onClick = {
+                        val title = inputTitle.trim()
+                        val id = editingId
+
+                        val updated = if (id == null) {
+                            task.subtasks + HomeSubtask(
+                                id = UUID.randomUUID().toString(),
+                                title = title,
+                                done = false
+                            )
+                        } else {
+                            task.subtasks.map { item ->
+                                if (item.id == id) {
+                                    item.copy(title = title)
+                                } else {
+                                    item
+                                }
+                            }
+                        }
+
+                        onSubtasksChange(updated)
+                        editorVisible = false
+                    }
+                ) {
+                    Text(stringResource(R.string.detail_saved_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editorVisible = false }) {
+                    Text(stringResource(R.string.task_editor_cancel))
+                }
+            }
+        )
+    }
+
+    // Hộp thoại xác nhận xóa việc nhỏ
+    if (deletingId != null) {
+        AlertDialog(
+            onDismissRequest = { deletingId = null },
+            title = {
+                Text(stringResource(R.string.subtask_delete_title))
+            },
+            text = {
+                Text(stringResource(R.string.subtask_delete_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val id = deletingId
+                        if (id != null) {
+                            onSubtasksChange(
+                                task.subtasks.filterNot { it.id == id }
+                            )
+                        }
+                        deletingId = null
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.detail_delete),
+                        color = Color(0xFFC4321F)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingId = null }) {
+                    Text(stringResource(R.string.task_editor_cancel))
+                }
+            }
+        )
+    }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            DetailSectionTitle(
+                stringResource(R.string.detail_subtasks)
+            )
+
+            Text(
+                "$completed/${task.subtasks.size}",
+                color = Color(0xFF6B6B70),
+                fontSize = 13.sp
+            )
+        }
+
+        val progress = if (task.subtasks.isEmpty()) {
+            0f
+        } else {
+            completed.toFloat() / task.subtasks.size
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE9E9EE))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(Color(0xFF2F5BEA))
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+        ) {
+            task.subtasks.forEachIndexed { index, item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp)
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Tích hoàn thành
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clickable {
+                                onSubtasksChange(
+                                    task.subtasks.map { subtask ->
+                                        if (subtask.id == item.id) {
+                                            subtask.copy(done = !subtask.done)
+                                        } else {
+                                            subtask
+                                        }
+                                    }
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(
+                                    if (item.done)
+                                        Color(0xFF2F5BEA)
+                                    else
+                                        Color.Transparent
+                                )
+                                .border(
+                                    width = if (item.done) 0.dp else 2.dp,
+                                    color = if (item.done)
+                                        Color.Transparent
+                                    else
+                                        Color(0xFFC7C7CC),
+                                    shape = RoundedCornerShape(6.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (item.done) {
+                                Icon(
+                                    painter = painterResource(
+                                        R.drawable.ic_detail_check
+                                    ),
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Nhấn tên để sửa
+                    Text(
+                        text = item.title,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                editingId = item.id
+                                inputTitle = item.title
+                                editorVisible = true
+                            }
+                            .padding(vertical = 12.dp),
+                        fontSize = 14.sp,
+                        color = if (item.done)
+                            Color(0xFF6B6B70)
+                        else
+                            Color(0xFF1C1C1E),
+                        textDecoration = if (item.done)
+                            TextDecoration.LineThrough
+                        else
+                            TextDecoration.None
+                    )
+
+                    // Xóa việc nhỏ
+                    Icon(
+                        painter = painterResource(
+                            R.drawable.ic_detail_delete
+                        ),
+                        contentDescription = stringResource(
+                            R.string.subtask_delete_title
+                        ),
+                        tint = Color(0xFF6B6B70),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable { deletingId = item.id }
+                    )
+                }
+
+                if (index != task.subtasks.lastIndex) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Color(0xFFEDEDF0))
+                    )
+                }
+            }
+
+            if (task.subtasks.isEmpty()) {
+                Text(
+                    stringResource(R.string.detail_subtasks_empty),
+                    modifier = Modifier.padding(16.dp),
+                    color = Color(0xFF6B6B70),
+                    fontSize = 14.sp
+                )
+            }
+
+            TextButton(
+                onClick = {
+                    editingId = null
+                    inputTitle = ""
+                    editorVisible = true
+                },
+                modifier = Modifier.padding(start = 8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(
+                        R.drawable.ic_detail_add
+                    ),
+                    contentDescription = null,
+                    tint = Color(0xFF2F5BEA),
+                    modifier = Modifier.size(20.dp)
+                )
+
+                Spacer(Modifier.width(8.dp))
+
+                Text(
+                    stringResource(R.string.subtask_add),
+                    color = Color(0xFF2F5BEA)
+                )
+            }
+        }
+    }
+}
+

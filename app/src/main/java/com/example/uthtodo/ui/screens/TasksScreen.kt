@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -25,16 +26,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
+import com.example.uthtodo.ui.components.TodoBottomBar
+import com.example.uthtodo.ui.components.TodoTab
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 import androidx.compose.ui.draw.shadow
-
-private val TasksBlue = Color(0xFF2F5BEA)
-private val TasksBackground = Color(0xFFF5F5F7)
-private val TasksText = Color(0xFF1C1C1E)
-private val TasksSecondary = Color(0xFF6B6B70)
 
 enum class TaskFilter {
     ALL, STUDY, LIFE
@@ -85,7 +83,7 @@ fun TasksScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(TasksBackground)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
         LazyColumn(
@@ -109,7 +107,7 @@ fun TasksScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.tasks_title),
-                        color = TasksText,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -119,7 +117,7 @@ fun TasksScreen(
                             R.string.tasks_pending_count,
                             tasks.count { !it.done }
                         ),
-                        color = TasksSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -142,7 +140,7 @@ fun TasksScreen(
                     Icon(
                         painter = painterResource(R.drawable.ic_tasks_search),
                         contentDescription = null,
-                        tint = TasksSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
 
@@ -151,7 +149,7 @@ fun TasksScreen(
                         onValueChange = { searchQuery = it },
                         singleLine = true,
                         textStyle = androidx.compose.ui.text.TextStyle(
-                            color = TasksText,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 16.sp
                         ),
                         modifier = Modifier.weight(1f),
@@ -163,7 +161,7 @@ fun TasksScreen(
                                             R.string.tasks_search_hint
                                         ),
                                         fontSize = 16.sp,
-                                        color = TasksSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 innerTextField()
@@ -196,8 +194,8 @@ fun TasksScreen(
                                 .height(36.dp)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(
-                                    if (selected) TasksText
-                                    else Color.White
+                                    if (selected) MaterialTheme.colorScheme.onBackground
+                                    else MaterialTheme.colorScheme.surface
                                 )
                                 .then(
                                     if (!selected) Modifier.border(
@@ -217,9 +215,9 @@ fun TasksScreen(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (selected) {
-                                    Color.White
+                                    MaterialTheme.colorScheme.background
                                 } else {
-                                    TasksText
+                                    MaterialTheme.colorScheme.onBackground
                                 }
                             )
                         }
@@ -233,12 +231,11 @@ fun TasksScreen(
                         text = stringResource(R.string.tasks_empty),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(
-                                Color.White,
+                            .background(MaterialTheme.colorScheme.surface,
                                 RoundedCornerShape(16.dp)
                             )
                             .padding(20.dp),
-                        color = TasksSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -287,7 +284,9 @@ fun TasksScreen(
             }
         }
 
-        TasksBottomBar(
+        TodoBottomBar(
+            selectedTab = TodoTab.TASKS,
+            onTasksClick = {},
             onHomeClick = onHomeClick,
             onAddClick = onAddClick,
             onNotificationsClick = onNotificationsClick,
@@ -302,7 +301,7 @@ private fun TasksSectionTitle(title: String) {
         text = title,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        color = TasksSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp
     )
 }
@@ -319,7 +318,7 @@ private fun TasksItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(
                 start = 8.dp,
                 end = 10.dp,
@@ -342,7 +341,7 @@ private fun TasksItem(
                     .then(
                         if (task.done) {
                             Modifier.background(
-                                TasksBlue,
+                                MaterialTheme.colorScheme.primary,
                                 CircleShape
                             )
                         } else {
@@ -378,9 +377,9 @@ private fun TasksItem(
             Text(
                 text = task.title,
                 color = if (task.done) {
-                    TasksSecondary
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
-                    TasksText
+                    MaterialTheme.colorScheme.onBackground
                 },
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
@@ -426,13 +425,13 @@ private fun TasksItem(
                     Text(
                         text = formatTaskDate(task.date),
                         fontSize = 12.sp,
-                        color = TasksSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
                         text = task.time,
                         fontSize = 12.sp,
-                        color = TasksSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -468,122 +467,6 @@ private fun formatTaskDate(date: String): String {
                 "dd/MM",
                 Locale.getDefault()
             )
-        )
-    }
-}
-
-@Composable
-private fun TasksBottomBar(
-    onHomeClick: () -> Unit,
-    onAddClick: () -> Unit,
-    onNotificationsClick: () -> Unit,
-    onSettingsClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .navigationBarsPadding()
-            .height(70.dp)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement =
-            Arrangement.SpaceEvenly
-    ) {
-        TasksNavItem(
-            icon = R.drawable.ic_nav_home,
-            title = stringResource(R.string.nav_home),
-            active = false,
-            onClick = onHomeClick,
-            modifier = Modifier.weight(1f)
-        )
-
-        TasksNavItem(
-            icon = R.drawable.ic_nav_tasks,
-            title = stringResource(R.string.nav_tasks),
-            active = true,
-            onClick = {},
-            modifier = Modifier.weight(1f)
-        )
-
-        Box(
-            modifier = Modifier.weight(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .offset(y = (-16).dp)
-                    .size(56.dp)
-                    .shadow(
-                        elevation = 12.dp,
-                        shape = CircleShape,
-                        clip = false
-                    )
-                    .clip(CircleShape)
-                    .background(TasksBlue)
-                    .clickable(onClick = onAddClick),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_nav_add),
-                    contentDescription =
-                        stringResource(R.string.nav_add),
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        TasksNavItem(
-            icon = R.drawable.ic_nav_bell,
-            title = stringResource(R.string.nav_notifications),
-            active = false,
-            onClick = onNotificationsClick,
-            modifier = Modifier.weight(1f)
-        )
-
-        TasksNavItem(
-            icon = R.drawable.ic_nav_settings,
-            title = stringResource(R.string.nav_settings),
-            active = false,
-            onClick = onSettingsClick,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun TasksNavItem(
-    icon: Int,
-    title: String,
-    active: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(vertical = 5.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Icon(
-            painter = painterResource(icon),
-            contentDescription = null,
-            tint = if (active) TasksBlue else TasksSecondary,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Text(
-            text = title,
-            fontSize = 11.sp,
-            fontWeight = if (active) {
-                FontWeight.SemiBold
-            } else {
-                FontWeight.Medium
-            },
-            color = if (active) TasksBlue else TasksSecondary,
-            maxLines = 1
         )
     }
 }
