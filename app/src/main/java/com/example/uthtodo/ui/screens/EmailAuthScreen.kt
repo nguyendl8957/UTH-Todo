@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -35,22 +36,26 @@ fun EmailAuthScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var registerMode by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(colors.background)
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         TextButton(onClick = onBackClick) {
-            Text("← Quay lại")
+            Text(stringResource(R.string.email_screen_back))
         }
 
         Text(
-            text = if (registerMode) "Đăng ký tài khoản"
-            else "Đăng nhập Email",
+            text = stringResource(
+                if (registerMode) R.string.email_screen_register_title
+                else R.string.email_screen_sign_in_title
+            ),
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -58,10 +63,19 @@ fun EmailAuthScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.email_screen_email_label)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = colors.onSurface,
+                unfocusedTextColor = colors.onSurface,
+                focusedLabelColor = colors.primary,
+                unfocusedLabelColor = colors.onSurfaceVariant,
+                cursorColor = colors.primary,
+                focusedBorderColor = colors.primary,
+                unfocusedBorderColor = colors.outline
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -69,7 +83,7 @@ fun EmailAuthScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Mật khẩu") },
+            label = { Text(stringResource(R.string.email_screen_password_label)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) {
                 VisualTransformation.None
@@ -104,6 +118,15 @@ fun EmailAuthScreen(
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password
             ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = colors.onSurface,
+                unfocusedTextColor = colors.onSurface,
+                focusedLabelColor = colors.primary,
+                unfocusedLabelColor = colors.onSurfaceVariant,
+                cursorColor = colors.primary,
+                focusedBorderColor = colors.primary,
+                unfocusedBorderColor = colors.outline
+            ),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -118,7 +141,12 @@ fun EmailAuthScreen(
             enabled = email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth().height(54.dp)
         ) {
-            Text(if (registerMode) "Đăng ký" else "Đăng nhập")
+            Text(
+                stringResource(
+                    if (registerMode) R.string.email_screen_register_action
+                    else R.string.email_screen_sign_in_action
+                )
+            )
         }
 
         TextButton(
@@ -126,8 +154,10 @@ fun EmailAuthScreen(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(
-                if (registerMode) "Đã có tài khoản? Đăng nhập"
-                else "Chưa có tài khoản? Đăng ký"
+                stringResource(
+                    if (registerMode) R.string.email_screen_existing_account
+                    else R.string.email_screen_new_account
+                )
             )
         }
 
@@ -145,7 +175,7 @@ fun EmailAuthScreen(
                 onClick = { onForgotPasswordClick(email.trim()) },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-                Text("Quên mật khẩu?")
+                Text(stringResource(R.string.email_screen_forgot_password))
             }
         }
     }

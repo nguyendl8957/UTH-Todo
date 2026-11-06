@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -381,7 +382,7 @@ private fun TasksItem(
                 } else {
                     MaterialTheme.colorScheme.onBackground
                 },
-                fontSize = 15.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 textDecoration = if (task.done) {
                     TextDecoration.LineThrough
@@ -408,7 +409,7 @@ private fun TasksItem(
                         } else {
                             Color(0xFFA24A08)
                         },
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .background(
@@ -424,13 +425,13 @@ private fun TasksItem(
 
                     Text(
                         text = formatTaskDate(task.date),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
                         text = task.time,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -465,7 +466,7 @@ private fun formatTaskDate(date: String): String {
         else -> parsed.format(
             DateTimeFormatter.ofPattern(
                 "dd/MM",
-                Locale.getDefault()
+                LocalConfiguration.current.locales[0] ?: Locale.getDefault()
             )
         )
     }

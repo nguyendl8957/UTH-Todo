@@ -2,6 +2,7 @@
 package com.example.uthtodo.ui.screens
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
 import com.example.uthtodo.data.OnboardingContent
 import com.example.uthtodo.ui.theme.UTHColors
+import com.example.uthtodo.ui.components.BrandMark
 import androidx.compose.ui.res.stringResource
 
 @Composable
@@ -50,10 +54,13 @@ fun OnboardingScreen(
     onFinished: () -> Unit
 ) {
     val pages = OnboardingContent.pages
+    val primary = MaterialTheme.colorScheme.primary
 
     var pageIndex by rememberSaveable {
         mutableIntStateOf(0)
     }
+
+    BackHandler(enabled = pageIndex > 0) { pageIndex-- }
 
     val page = pages[pageIndex]
 
@@ -86,16 +93,10 @@ fun OnboardingScreen(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(UTHColors.Primary),
+                        .background(primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(
-                            R.drawable.ic_onboarding_1_1
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    BrandMark(primary, Modifier.size(32.dp), onPrimaryTile = true)
                 }
 
                 Text(
@@ -112,7 +113,7 @@ fun OnboardingScreen(
                         withStyle(
                             SpanStyle(
                                 fontWeight = FontWeight.Medium,
-                                color = UTHColors.Primary
+                                color = primary
                             )
                         ) {
                             append(" Todo")
@@ -143,7 +144,7 @@ fun OnboardingScreen(
                     .size(240.dp)
                     .clip(RoundedCornerShape(40.dp))
                     .background(
-                        UTHColors.Primary.copy(alpha = 0.10f)
+                        primary.copy(alpha = 0.10f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -159,7 +160,8 @@ fun OnboardingScreen(
                             page.illustrationRes
                         ),
                         contentDescription = stringResource(page.titleRes),
-                        modifier = Modifier.size(52.dp)
+                        modifier = Modifier.size(52.dp),
+                        colorFilter = ColorFilter.tint(primary)
                     )
                 }
             }
@@ -213,7 +215,7 @@ fun OnboardingScreen(
                         .clip(RoundedCornerShape(4.dp))
                         .background(
                             if (index == pageIndex) {
-                                UTHColors.Primary
+                                primary
                             } else {
                                 Color(0xFFC7C7CC)
                             }
@@ -239,7 +241,7 @@ fun OnboardingScreen(
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = UTHColors.Primary,
+                containerColor = primary,
                 contentColor = Color.White
             )
         ) {

@@ -1,6 +1,5 @@
 package com.example.uthtodo.ui.screens
 
-import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,11 +9,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,18 +39,10 @@ import com.example.uthtodo.model.TaskDraft
 import com.example.uthtodo.model.TaskPriority
 import java.time.DayOfWeek
 import java.time.LocalDate
+import com.example.uthtodo.ui.components.TodoModalSheet
 
-private val EditorBlue = Color(0xFF2F5BEA)
-private val EditorBlueText = Color(0xFF1F4FD1)
-private val EditorBlueLight = Color(0xFFE6EDFF)
-private val EditorBackground = Color(0xFFF5F5F7)
-private val EditorWhite = Color.White
-private val EditorText = Color(0xFF1C1C1E)
-private val EditorSecondary = Color(0xFF6B6B70)
-private val EditorBorder = Color(0xFFD8D8DE)
-private val EditorDivider = Color(0xFFEDEDF0)
-private val EditorControl = Color(0xFFE9E9EE)
-private val EditorGreen = Color(0xFF34C759)
+private val StudyCategoryAccent = Color(0xFF2F5BEA)
+private val LifeCategoryAccent = Color(0xFFC2410C)
 
 @Composable
 fun TaskEditorScreen(
@@ -54,6 +50,15 @@ fun TaskEditorScreen(
     onCancel: () -> Unit,
     onSave: (TaskDraft) -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val EditorBlue = colorScheme.primary
+    val EditorBackground = colorScheme.background
+    val EditorWhite = colorScheme.surface
+    val EditorText = colorScheme.onSurface
+    val EditorSecondary = colorScheme.onSurfaceVariant
+    val EditorDivider = colorScheme.outline.copy(alpha = 0.45f)
+    val EditorControl = colorScheme.surfaceVariant
+    val EditorGreen = Color(0xFF34C759)
     val context = LocalContext.current
     val editing = initialDraft != null
 
@@ -79,6 +84,55 @@ fun TaskEditorScreen(
 
     var time by remember(initialDraft) {
         mutableStateOf(initialDraft?.time ?: "19:00")
+    }
+
+
+    var showTimeDialog by remember { mutableStateOf(false) }
+    var dialogHour by remember { mutableStateOf("7") }
+    var dialogMinute by remember { mutableStateOf("00") }
+    var dialogPeriod by remember { mutableStateOf(false) }
+
+    if (showTimeDialog) {
+        val amLabel = stringResource(R.string.uth_time_am)
+        val pmLabel = stringResource(R.string.uth_time_pm)
+        TodoModalSheet(onDismissRequest = { showTimeDialog = false }) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(painterResource(R.drawable.ic_editor_clock), null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp))
+                Text(stringResource(R.string.task_editor_time),
+                    style = MaterialTheme.typography.titleLarge)
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(Modifier.fillMaxWidth().height(196.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                TimeWheelColumn((1..12).map { it.toString() }, dialogHour,
+                    { dialogHour = it }, Modifier.weight(1f))
+                Text(":", modifier = Modifier.align(Alignment.CenterVertically),
+                    fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
+                TimeWheelColumn((0..59).map { it.toString().padStart(2, '0') }, dialogMinute,
+                    { dialogMinute = it }, Modifier.weight(1f))
+                TimeWheelColumn(listOf(amLabel, pmLabel),
+                    if (dialogPeriod) pmLabel else amLabel,
+                    { dialogPeriod = it == pmLabel }, Modifier.weight(1.2f))
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TextButton(onClick = { showTimeDialog = false }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.task_editor_cancel))
+                }
+                Button(onClick = {
+                    val hour12 = dialogHour.toIntOrNull() ?: 7
+                    val hour24 = (hour12 % 12) + if (dialogPeriod) 12 else 0
+                    time = String.format(java.util.Locale.US, "%02d:%02d", hour24,
+                        dialogMinute.toIntOrNull() ?: 0)
+                    showTimeDialog = false
+                }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.task_editor_save))
+                }
+            }
+        }
     }
 
     var remind by remember(initialDraft) {
@@ -174,7 +228,7 @@ fun TaskEditorScreen(
                         color = if (canSave) {
                             EditorBlue
                         } else {
-                            Color(0xFF8A8A8E)
+                            colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         }
                     )
                 }
@@ -253,7 +307,8 @@ fun TaskEditorScreen(
                         selected = category == TaskCategory.STUDY,
                         onClick = { category = TaskCategory.STUDY },
                         modifier = Modifier.weight(1f),
-                        height = 48.dp
+                        height = 48.dp,
+                        selectedColor = StudyCategoryAccent
                     )
 
                     EditorChoice(
@@ -261,7 +316,8 @@ fun TaskEditorScreen(
                         selected = category == TaskCategory.LIFE,
                         onClick = { category = TaskCategory.LIFE },
                         modifier = Modifier.weight(1f),
-                        height = 48.dp
+                        height = 48.dp,
+                        selectedColor = LifeCategoryAccent
                     )
                 }
             }
@@ -326,25 +382,11 @@ fun TaskEditorScreen(
                             .background(EditorControl)
                             .clickable {
                                 val parts = time.split(":")
-                                val hour = parts.getOrNull(0)
-                                    ?.toIntOrNull() ?: 19
-                                val minute = parts.getOrNull(1)
-                                    ?.toIntOrNull() ?: 0
-
-                                TimePickerDialog(
-                                    context,
-                                    { _, h, m ->
-                                        time = String.format(
-                                            java.util.Locale.US,
-                                            "%02d:%02d",
-                                            h,
-                                            m
-                                        )
-                                    },
-                                    hour,
-                                    minute,
-                                    true
-                                ).show()
+                                val hour24 = parts.getOrNull(0)?.toIntOrNull() ?: 19
+                                dialogHour = ((hour24 % 12).let { if (it == 0) 12 else it }).toString()
+                                dialogMinute = parts.getOrNull(1) ?: "00"
+                                dialogPeriod = hour24 >= 12
+                                showTimeDialog = true
                             }
                             .padding(
                                 horizontal = 12.dp,
@@ -352,12 +394,21 @@ fun TaskEditorScreen(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val hour24 = time.substringBefore(":").toIntOrNull() ?: 19
+                        val hour12 = (hour24 % 12).let { if (it == 0) 12 else it }
                         Text(
-                            text = time,
+                            text = String.format(java.util.Locale.US, "%02d:%s %s", hour12,
+                                time.substringAfter(":", "00"),
+                                stringResource(if (hour24 >= 12) R.string.uth_time_pm else R.string.uth_time_am)),
                             fontSize = 15.sp,
                             color = EditorText,
                             fontWeight = FontWeight.Medium
                         )
+                        Icon(painterResource(R.drawable.ic_editor_clock), null,
+                            tint = EditorSecondary, modifier = Modifier.size(17.dp))
+                        }
                     }
                 }
 
@@ -410,7 +461,7 @@ fun TaskEditorScreen(
                             .clip(CircleShape)
                             .background(
                                 if (remind) EditorGreen
-                                else Color(0xFFD1D1D6)
+                                else colorScheme.outline
                             )
                             .clickable(
                                 role = Role.Switch,
@@ -427,7 +478,7 @@ fun TaskEditorScreen(
                             modifier = Modifier
                                 .size(27.dp)
                                 .shadow(2.dp, CircleShape)
-                                .background(EditorWhite, CircleShape)
+                                .background(colorScheme.onPrimary, CircleShape)
                         )
                     }
                 }
@@ -520,7 +571,7 @@ fun TaskEditorScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = EditorBlue,
                     disabledContainerColor = EditorControl,
-                    disabledContentColor = Color(0xFF8A8A8E)
+                    disabledContentColor = colorScheme.onSurfaceVariant
                 )
             ) {
                 Text(
@@ -530,6 +581,38 @@ fun TaskEditorScreen(
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeWheelColumn(
+    values: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(selected) {
+        val selectedIndex = values.indexOf(selected).coerceAtLeast(0)
+        listState.animateScrollToItem((selectedIndex - 2).coerceAtLeast(0))
+    }
+    LazyColumn(state = listState, modifier = modifier.fillMaxHeight(), contentPadding = PaddingValues(vertical = 4.dp)) {
+        items(values) { value ->
+            val isSelected = value == selected
+            Box(
+                Modifier.fillMaxWidth().height(36.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)
+                    else Color.Transparent)
+                    .clickable { onSelected(value) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(value, color = if (isSelected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 15.sp)
             }
         }
     }
@@ -551,7 +634,7 @@ private fun EditorInput(
         Text(
             text = label,
             fontSize = 12.sp,
-            color = EditorSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         BasicTextField(
@@ -561,7 +644,7 @@ private fun EditorInput(
             minLines = if (singleLine) 1 else 3,
             textStyle = TextStyle(
                 fontSize = 15.sp,
-                color = EditorText
+                color = MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { innerTextField ->
@@ -570,7 +653,7 @@ private fun EditorInput(
                         Text(
                             text = placeholder,
                             fontSize = 15.sp,
-                            color = Color(0xFF8A8A8E)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                     innerTextField()
@@ -592,7 +675,7 @@ private fun EditorSection(
             text = title,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = EditorSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         content()
     }
@@ -604,8 +687,11 @@ private fun EditorChoice(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    height: androidx.compose.ui.unit.Dp
+    height: androidx.compose.ui.unit.Dp,
+    selectedColor: Color? = null
 ) {
+    val colors = MaterialTheme.colorScheme
+    val activeColor = selectedColor ?: colors.primary
     val shape = RoundedCornerShape(14.dp)
 
     Box(
@@ -613,14 +699,14 @@ private fun EditorChoice(
             .height(height)
             .clip(shape)
             .background(
-                if (selected) EditorBlueLight else EditorWhite
+                if (selected) activeColor.copy(alpha = 0.12f) else colors.surface
             )
             .border(
                 width = if (selected) 2.dp else 1.dp,
                 color = if (selected) {
-                    EditorBlue
+                    activeColor
                 } else {
-                    EditorBorder
+                    colors.outline
                 },
                 shape = shape
             )
@@ -632,9 +718,9 @@ private fun EditorChoice(
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (selected) {
-                EditorBlueText
+                activeColor
             } else {
-                EditorText
+                colors.onSurface
             }
         )
     }

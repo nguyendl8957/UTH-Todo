@@ -24,9 +24,17 @@ import com.example.uthtodo.ui.components.TodoTab
 import com.example.uthtodo.ui.theme.AppAppearance
 import com.example.uthtodo.notifications.TodoNotificationScheduler
 import com.example.uthtodo.ui.screens.HomeTask
+import com.example.uthtodo.ui.components.avatarInitials
+import com.google.firebase.auth.FirebaseUser
+import com.example.uthtodo.ui.components.TodoModalSheet
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 
 private val accentColors = listOf(
     Color(0xFF2F5BEA),
@@ -43,7 +51,9 @@ fun SettingsScreen(
     onAddClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     appearance: AppAppearance,
-    tasksForReminders: List<HomeTask>
+    user: FirebaseUser?,
+    tasksForReminders: List<HomeTask>,
+    onRequestNotificationPermission: (onResult: (Boolean) -> Unit) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -56,10 +66,25 @@ fun SettingsScreen(
 
     val themeMode = appearance.themeMode
     val accentIndex = appearance.accentIndex
+    val anonymous = user == null || user.isAnonymous
+    val accountName = user?.displayName?.trim()?.takeIf { it.isNotBlank() }
+        ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
+    val initials = avatarInitials(accountName, anonymous)
     var languageDialog by remember { mutableStateOf(false) }
 
+    val reminderDefault = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
     var reminders by remember {
-        mutableStateOf(preferences.getBoolean("reminders", true))
+        mutableStateOf(preferences.getBoolean("reminders", reminderDefault))
+    }
+
+    fun updateReminders(enabled: Boolean) {
+        reminders = enabled
+        preferences.edit().putBoolean("reminders", enabled).apply()
+        TodoNotificationScheduler(context).sync(tasksForReminders)
     }
 
     var sound by remember {
@@ -71,28 +96,42 @@ fun SettingsScreen(
     }
 
     if (languageDialog) {
-        AlertDialog(
-            onDismissRequest = { languageDialog = false },
-            title = { Text(stringResource(R.string.settings_language)) },
-            text = {
-                Column {
-                    listOf(
-                        "vi" to "Tiếng Việt", "en" to "English",
-                        "zh-CN" to "简体中文", "ja" to "日本語", "ko" to "한국어"
-                    ).forEach { (tag, label) ->
-                        TextButton(onClick = {
-                            appearance.setLanguage(tag)
-                            languageDialog = false
-                        }) { Text(label) }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { languageDialog = false }) {
-                    Text(stringResource(R.string.task_editor_cancel))
+        TodoModalSheet(onDismissRequest = { languageDialog = false }) {
+            Text(
+                stringResource(R.string.settings_language),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(12.dp))
+            listOf(
+                "vi" to "Tiếng Việt",
+                "en" to "English",
+                "zh-CN" to "简体中文",
+                "ja" to "日本語",
+                "ko" to "한국어"
+            ).forEach { (tag, label) ->
+                TextButton(
+                    onClick = {
+                        appearance.setLanguage(tag)
+                        languageDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        label,
+                        color = if (appearance.languageTag == tag)
+                            MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
-        )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { languageDialog = false },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+            ) { Text(stringResource(R.string.task_editor_cancel)) }
+        }
     }
 
     Column(
@@ -123,15 +162,12 @@ fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .background(
-                            Color(0xFFE6EDFF),
-                            CircleShape
-                        )
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape)
                         .clickable(onClick = onProfileClick),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "UT",
+                        initials,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -172,57 +208,16 @@ fun SettingsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(84.dp)
-                                    .background(
-                                        when (mode) {
-                                            "dark" -> Color.Black
-                                            "system" -> Color(0xFF88888C)
-                                            else -> MaterialTheme.colorScheme.background
-                                        },
-                                        RoundedCornerShape(14.dp)
-                                    )
-                                    .border(
-                                        if (selected) 2.dp else 1.dp,
-                                        if (selected) accentColors[accentIndex]
-                                        else Color(0xFFEDEDF0),
-                                        RoundedCornerShape(14.dp)
-                                    )
-                                    .padding(10.dp)
-                            ) {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(7.dp)
-                                ) {
-                                    Box(
-                                        Modifier
-                                            .fillMaxWidth(0.6f)
-                                            .height(8.dp)
-                                            .background(
-                                                Color(0xFFD1D1D6),
-                                                RoundedCornerShape(4.dp)
-                                            )
-                                    )
-                                    repeat(2) {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(18.dp)
-                                                .background(
-                                                    if (mode == "dark")
-                                                        Color(0xFF2C2C2E)
-                                                    else Color.White,
-                                                    RoundedCornerShape(6.dp)
-                                                )
-                                        )
-                                    }
-                                }
-                            }
+                            ThemeModePreview(
+                                mode = mode,
+                                selected = selected,
+                                selectionColor = accentColors[accentIndex],
+                                modifier = Modifier.fillMaxWidth()
+                            )
 
                             Text(
                                 stringResource(labelId),
-                                fontSize = 13.sp,
+                                fontSize = 15.sp,
                                 fontWeight = if (selected)
                                     FontWeight.SemiBold
                                 else FontWeight.Normal,
@@ -296,12 +291,22 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_reminders),
                     subtitle = stringResource(R.string.settings_reminders_desc),
                     checked = reminders,
-                    onCheckedChange = {
-                        reminders = it
-                        preferences.edit()
-                            .putBoolean("reminders", it)
-                            .apply()
-                        TodoNotificationScheduler(context).sync(tasksForReminders)
+                    onCheckedChange = { enabled ->
+                        if (!enabled) {
+                            updateReminders(false)
+                        } else if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            onRequestNotificationPermission { granted ->
+                                if (granted) updateReminders(true)
+                            }
+                        } else {
+                            updateReminders(true)
+                        }
                     }
                 )
 
@@ -352,13 +357,15 @@ fun SettingsScreen(
             ) {
                 SettingsInfoRow(
                     stringResource(R.string.settings_language),
-                    when (appearance.languageTag) {
-                        "en" -> "English"
-                        "zh-CN" -> "简体中文"
-                        "ja" -> "日本語"
-                        "ko" -> "한국어"
-                        else -> "Tiếng Việt"
-                    },
+                    stringResource(
+                        when (appearance.languageTag) {
+                            "en" -> R.string.settings_language_english
+                            "zh-CN" -> R.string.settings_language_chinese
+                            "ja" -> R.string.settings_language_japanese
+                            "ko" -> R.string.settings_language_korean
+                            else -> R.string.settings_language_vietnamese
+                        }
+                    ),
                     onClick = { languageDialog = true }
                 )
 
@@ -394,6 +401,74 @@ private fun SettingsSectionLabel(text: String) {
         letterSpacing = 0.5.sp,
         modifier = Modifier.padding(top = 6.dp)
     )
+}
+
+@Composable
+private fun ThemeModePreview(
+    mode: String,
+    selected: Boolean,
+    selectionColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val tileShape = RoundedCornerShape(18.dp)
+    Box(modifier.fillMaxWidth().height(108.dp).clip(tileShape)) {
+        if (mode == "system") {
+            Row(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxHeight().background(Color(0xFFF5F5F7))) {
+                    ThemeModePreviewPane(
+                        isDark = false,
+                        modifier = Modifier.fillMaxSize().padding(10.dp)
+                    )
+                }
+                Box(Modifier.weight(1f).fillMaxHeight().background(Color.Black)) {
+                    ThemeModePreviewPane(
+                        isDark = true,
+                        modifier = Modifier.fillMaxSize().padding(10.dp)
+                    )
+                }
+            }
+        } else {
+            val isDark = mode == "dark"
+            Box(
+                Modifier.fillMaxSize()
+                    .background(if (isDark) Color.Black else Color(0xFFF5F5F7))
+            ) {
+                ThemeModePreviewPane(
+                    isDark = isDark,
+                    modifier = Modifier.fillMaxSize().padding(12.dp)
+                )
+            }
+        }
+        Box(
+            Modifier.fillMaxSize().border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) selectionColor else Color(0xFFE5E5EA),
+                shape = tileShape
+            )
+        )
+    }
+}
+
+@Composable
+private fun ThemeModePreviewPane(isDark: Boolean, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Box(
+            Modifier.fillMaxWidth(0.6f).height(9.dp)
+                .background(Color(0xFFD1D1D6), RoundedCornerShape(5.dp))
+        )
+        repeat(2) {
+            Box(
+                Modifier.fillMaxWidth().weight(1f)
+                    .background(
+                        if (isDark) Color(0xFF2C2C2E) else Color.White,
+                        RoundedCornerShape(7.dp)
+                    )
+            )
+        }
+    }
 }
 
 @Composable

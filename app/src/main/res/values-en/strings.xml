@@ -112,6 +112,7 @@
     <string name="detail_operation_failed">Operation failed</string>
     <string name="detail_loading">Loading task details...</string>
     <string name="subtask_add">Add subtask</string>
+    <string name="subtask_add_action">Add</string>
     <string name="subtask_add_title">Add subtask</string>
     <string name="subtask_edit_title">Edit subtask</string>
     <string name="subtask_name">Subtask title</string>
@@ -154,4 +155,35 @@
     <string name="uth_notifications_empty">No notifications yet.</string>
     <string name="uth_reminder_body">A task is due soon.</string>
     <string name="uth_daily_summary_body">%1$d completed · %2$d pending</string>
+
+    <string name="email_screen_back">← Back</string>
+    <string name="email_screen_sign_in_title">Sign in with email</string>
+    <string name="email_screen_register_title">Create an account</string>
+    <string name="email_screen_email_label">Email</string>
+    <string name="email_screen_password_label">Password</string>
+    <string name="email_screen_register_action">Create account</string>
+    <string name="email_screen_sign_in_action">Sign in</string>
+    <string name="email_screen_existing_account">Already have an account? Sign in</string>
+    <string name="email_screen_new_account">New here? Create an account</string>
+    <string name="email_screen_forgot_password">Forgot password?</string>
+    <string name="uth_notifications_mark_all_read">Mark all as read</string>
+    <string name="uth_notification_type_reminder">Upcoming task</string>
+    <string name="uth_notification_type_summary">Daily summary</string>
+    <string name="uth_notification_type_other">Notification</string>
+    <string name="uth_notification_type_completion">Well done!</string>
+    <string name="uth_notification_task_completed">You completed: %1$s</string>
+    <string name="uth_notification_task_due">%1$s at %2$s.</string>
+    <string name="uth_signout_confirm_title">Sign out?</string>
+    <string name="uth_signout_confirm_message">Are you sure you want to sign out of this account?</string>
+    <string name="uth_notification_yesterday">Yesterday</string>
+    <string name="uth_notification_type_overdue">Overdue</string>
+    <string name="uth_notification_task_overdue">%1$s is still unfinished. Deadline: %2$s.</string>
+    <string name="uth_notification_summary_generic">Your daily task summary.</string>
+    <string name="uth_time_am">AM</string>
+    <string name="uth_time_pm">PM</string>
+    <string name="settings_language_vietnamese">Vietnamese</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_chinese">Simplified Chinese</string>
+    <string name="settings_language_japanese">Japanese</string>
+    <string name="settings_language_korean">Korean</string>
 </resources>

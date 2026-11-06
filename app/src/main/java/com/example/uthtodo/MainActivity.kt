@@ -1,14 +1,19 @@
 package com.example.uthtodo
 
 import android.os.Bundle
-import android.os.Build
 import android.Manifest
-import android.content.pm.PackageManager
+import android.content.SharedPreferences
+import android.content.res.Configuration
 import com.example.uthtodo.notifications.TodoNotificationScheduler
+import com.example.uthtodo.notifications.NotificationHistory
+import com.example.uthtodo.notifications.TodoNotificationEntry
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
@@ -16,6 +21,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import com.example.uthtodo.ui.theme.AppAppearance
 import com.example.uthtodo.ui.theme.LocalizedContent
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.content.edit
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.GetCredentialCancellationException
@@ -49,9 +56,11 @@ import com.example.uthtodo.ui.screens.NotificationsScreen
 import com.example.uthtodo.ui.screens.ProfileScreen
 import com.example.uthtodo.ui.screens.SettingsScreen
 import com.example.uthtodo.ui.screens.TasksScreen
+import com.example.uthtodo.ui.screens.TaskFilter
 import com.example.uthtodo.ui.theme.UTHTodoTheme
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 private enum class StartScreen {
     SPLASH,
@@ -69,18 +78,21 @@ private enum class StartScreen {
 }
 
 class MainActivity : ComponentActivity() {
+    private var openedNotificationId by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openedNotificationId = intent.getStringExtra("open_notification_id")
+    }
 
     private var googleSignInBusy = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 204)
-        }
+        openedNotificationId = intent?.getStringExtra("open_notification_id")
 
+        enableEdgeToEdge()
         setContent {
             val appearance = remember { AppAppearance(applicationContext) }
             val systemDark = isSystemInDarkTheme()
@@ -88,7 +100,25 @@ class MainActivity : ComponentActivity() {
                 darkTheme = appearance.isDark(systemDark),
                 accentColor = appearance.accentColor
             ) {
+                var pendingNotificationPermissionResult by remember {
+                    mutableStateOf<((Boolean) -> Unit)?>(null)
+                }
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { granted ->
+                    pendingNotificationPermissionResult?.invoke(granted)
+                    pendingNotificationPermissionResult = null
+                }
                 LocalizedContent(appearance.languageTag) {
+                    val localizedResources = remember(appearance.languageTag) {
+                        val config = Configuration(resources.configuration).apply {
+                            setLocale(Locale.forLanguageTag(appearance.languageTag))
+                        }
+                        createConfigurationContext(config).resources
+                    }
+                    fun getString(resourceId: Int): String = localizedResources.getString(resourceId)
+                    val completionTitle = stringResource(R.string.uth_notification_type_completion)
+                    val completionMessageFormat = stringResource(R.string.uth_notification_task_completed)
 
                     var currentScreen by rememberSaveable {
                         mutableStateOf(StartScreen.SPLASH)
@@ -96,10 +126,46 @@ class MainActivity : ComponentActivity() {
                     var selectedTaskId by rememberSaveable {
                         mutableStateOf<String?>(null)
                     }
+                    var taskFilterOnEntry by remember {
+                        mutableStateOf(TaskFilter.ALL)
+                    }
+
+                    val backStack = remember { mutableStateListOf<StartScreen>() }
+                    val navigateTo: (StartScreen) -> Unit = { destination ->
+                        if (destination != currentScreen) {
+                            backStack.add(currentScreen)
+                            currentScreen = destination
+                        }
+                    }
+                    val replaceCurrentScreen: (StartScreen) -> Unit = { destination ->
+                        if (backStack.lastOrNull() == destination) {
+                            backStack.removeAt(backStack.lastIndex)
+                        }
+                        currentScreen = destination
+                    }
+                    val resetNavigation: (StartScreen) -> Unit = { destination ->
+                        backStack.clear()
+                        currentScreen = destination
+                    }
+                    val navigateBack: () -> Unit = {
+                        if (backStack.isNotEmpty()) {
+                            currentScreen = backStack.removeAt(backStack.lastIndex)
+                        }
+                    }
+                    BackHandler(enabled = backStack.isNotEmpty()) {
+                        navigateBack()
+                    }
 
 
                     val tasks = remember {
                         mutableStateListOf<HomeTask>()
+                    }
+
+                    val requestNotificationPermission: ((Boolean) -> Unit) -> Unit = { onResult ->
+                        pendingNotificationPermissionResult = onResult
+                        notificationPermissionLauncher.launch(
+                            Manifest.permission.POST_NOTIFICATIONS
+                        )
                     }
 
                     val taskRepository = remember {
@@ -107,6 +173,67 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+                    val recordTaskCompletion: (String, String) -> Unit = { taskId, title ->
+                        userId?.let { uid ->
+                            NotificationHistory.add(
+                                applicationContext,
+                                uid,
+                                TodoNotificationEntry(
+                                    title = completionTitle,
+                                    message = String.format(
+                                        Locale.forLanguageTag(appearance.languageTag),
+                                        completionMessageFormat,
+                                        title
+                                    ),
+                                    timestamp = System.currentTimeMillis(),
+                                    type = com.example.uthtodo.notifications.TodoNotificationType.COMPLETION,
+                                    taskTitle = title
+                                )
+                            )
+                        }
+                    }
+
+                    val notificationEntries = remember(userId) {
+                        mutableStateListOf<TodoNotificationEntry>().apply {
+                            userId?.let { addAll(NotificationHistory.read(applicationContext, it)) }
+                        }
+                    }
+
+                    LaunchedEffect(openedNotificationId, userId) {
+                        val id = openedNotificationId
+                        val uid = userId
+                        if (id != null && uid != null) {
+                            notificationEntries.clear()
+                            notificationEntries.addAll(
+                                NotificationHistory.markRead(applicationContext, uid, id)
+                            )
+                            resetNavigation(StartScreen.NOTIFICATIONS)
+                            openedNotificationId = null
+                        }
+                    }
+
+                    DisposableEffect(userId, notificationEntries) {
+                        if (userId == null) {
+                            onDispose { }
+                        } else {
+                            val preferences = getSharedPreferences(
+                                "uth_notification_history", MODE_PRIVATE
+                            )
+                            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                                if (key == "notifications_$userId") {
+                                    notificationEntries.clear()
+                                    notificationEntries.addAll(
+                                        NotificationHistory.read(applicationContext, userId)
+                                    )
+                                }
+                            }
+                            preferences.registerOnSharedPreferenceChangeListener(listener)
+                            onDispose {
+                                preferences.unregisterOnSharedPreferenceChangeListener(listener)
+                            }
+                        }
+                    }
 
                     val isTaskArea = currentScreen == StartScreen.HOME ||
                             currentScreen == StartScreen.TASKS ||
@@ -170,11 +297,11 @@ class MainActivity : ComponentActivity() {
                                             false
                                         )
 
-                                    currentScreen = when {
+                                    resetNavigation(when {
                                         currentUser != null -> StartScreen.HOME
                                         onboardingCompleted -> StartScreen.LOGIN
                                         else -> StartScreen.ONBOARDING
-                                    }
+                                    })
                                 }
                             )
                         }
@@ -186,12 +313,11 @@ class MainActivity : ComponentActivity() {
                                     getSharedPreferences(
                                         "uth_todo_startup",
                                         MODE_PRIVATE
-                                    )
-                                        .edit()
-                                        .putBoolean("onboarding_completed", true)
-                                        .apply()
+                                    ).edit {
+                                        putBoolean("onboarding_completed", true)
+                                    }
 
-                                    currentScreen = StartScreen.LOGIN
+                                    navigateTo(StartScreen.LOGIN)
                                 }
                             )
                         }
@@ -200,19 +326,11 @@ class MainActivity : ComponentActivity() {
                         StartScreen.EMAIL_AUTH -> {
                             val repository = AuthRepository()
 
-                            val showEmailNotReady = {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    getString(R.string.login_not_ready),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
                             EmailAuthScreen(
                                 canResendVerification = canResendVerification,
                                 onBackClick = {
                                     canResendVerification = false
-                                    currentScreen = StartScreen.LOGIN
+                                    navigateBack()
                                 },
 
                                 onSignInClick = { email, password ->
@@ -226,7 +344,7 @@ class MainActivity : ComponentActivity() {
                                                     verificationResult.isSuccess &&
                                                             verificationResult.getOrNull() == true -> {
                                                         canResendVerification = false
-                                                        currentScreen = StartScreen.HOME
+                                                        resetNavigation(StartScreen.HOME)
                                                     }
 
                                                     verificationResult.isSuccess -> {
@@ -338,29 +456,38 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 user = AuthRepository().currentUser(),
                                 tasks = tasks,
+                                hasUnreadNotifications = notificationEntries.any { !it.isRead },
                                 onAvatarClick = {
-                                    currentScreen = StartScreen.PROFILE
+                                    navigateTo(StartScreen.PROFILE)
                                 },
                                 onViewAllClick = {
-                                    currentScreen = StartScreen.TASKS
+                                    taskFilterOnEntry = TaskFilter.ALL
+                                    navigateTo(StartScreen.TASKS)
                                 },
                                 onStudyClick = {
-                                    currentScreen = StartScreen.TASKS
+                                    taskFilterOnEntry = TaskFilter.STUDY
+                                    navigateTo(StartScreen.TASKS)
                                 },
                                 onAddClick = {
                                     selectedTaskId = null
-                                    currentScreen = StartScreen.TASK_EDITOR
+                                    navigateTo(StartScreen.TASK_EDITOR)
                                 },
                                 onTaskClick = { taskId ->
                                     selectedTaskId = taskId
-                                    currentScreen = StartScreen.TASK_DETAIL
+                                    navigateTo(StartScreen.TASK_DETAIL)
                                 },
 
                                 onTaskCheckedChange = { taskId, completed ->
+                                    val previousTask = tasks.firstOrNull { it.id == taskId }
                                     taskRepository.updateTaskDone(
                                         taskId = taskId,
                                         done = completed
                                     ) { result ->
+                                        result.onSuccess { changed ->
+                                            if (changed && completed && previousTask?.done == false) {
+                                                recordTaskCompletion(previousTask.id, previousTask.title)
+                                            }
+                                        }
                                         result.onFailure { error ->
                                             Toast.makeText(
                                                 this@MainActivity,
@@ -372,13 +499,14 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onLifeClick = {
-                                    currentScreen = StartScreen.TASKS
+                                    taskFilterOnEntry = TaskFilter.LIFE
+                                    navigateTo(StartScreen.TASKS)
                                 },
                                 onNotificationsClick = {
-                                    currentScreen = StartScreen.NOTIFICATIONS
+                                    navigateTo(StartScreen.NOTIFICATIONS)
                                 },
                                 onSettingsClick = {
-                                    currentScreen = StartScreen.SETTINGS
+                                    navigateTo(StartScreen.SETTINGS)
                                 }
                             )
                         }
@@ -386,30 +514,37 @@ class MainActivity : ComponentActivity() {
                         StartScreen.TASKS -> {
                             TasksScreen(
                                 tasks = tasks,
+                                initialFilter = taskFilterOnEntry,
                                 onHomeClick = {
-                                    currentScreen = StartScreen.HOME
+                                    resetNavigation(StartScreen.HOME)
                                 },
                                 onAddClick = {
                                     selectedTaskId = null
-                                    currentScreen = StartScreen.TASK_EDITOR
+                                    navigateTo(StartScreen.TASK_EDITOR)
                                 },
                                 onNotificationsClick = {
-                                    currentScreen = StartScreen.NOTIFICATIONS
+                                    navigateTo(StartScreen.NOTIFICATIONS)
                                 },
                                 onSettingsClick = {
-                                    currentScreen = StartScreen.SETTINGS
+                                    navigateTo(StartScreen.SETTINGS)
                                 },
                                 onTaskClick = { taskId ->
                                     selectedTaskId = taskId
-                                    currentScreen = StartScreen.TASK_DETAIL
+                                    navigateTo(StartScreen.TASK_DETAIL)
                                 },
 
 
                                 onTaskCheckedChange = { taskId, completed ->
+                                    val previousTask = tasks.firstOrNull { it.id == taskId }
                                     taskRepository.updateTaskDone(
                                         taskId = taskId,
                                         done = completed
                                     ) { result ->
+                                        result.onSuccess { changed ->
+                                            if (changed && completed && previousTask?.done == false) {
+                                                recordTaskCompletion(previousTask.id, previousTask.title)
+                                            }
+                                        }
                                         result.onFailure { error ->
                                             Toast.makeText(
                                                 this@MainActivity,
@@ -425,30 +560,55 @@ class MainActivity : ComponentActivity() {
 
                         StartScreen.SETTINGS -> {
                             SettingsScreen(
-                                onHomeClick = { currentScreen = StartScreen.HOME },
-                                onTasksClick = { currentScreen = StartScreen.TASKS },
-                                onProfileClick = { currentScreen = StartScreen.PROFILE },
+                                onHomeClick = { resetNavigation(StartScreen.HOME) },
+                                onTasksClick = {
+                                    taskFilterOnEntry = TaskFilter.ALL
+                                    navigateTo(StartScreen.TASKS)
+                                },
+                                onProfileClick = { navigateTo(StartScreen.PROFILE) },
                                 onAddClick = {
                                     selectedTaskId = null
-                                    currentScreen = StartScreen.TASK_EDITOR
+                                    navigateTo(StartScreen.TASK_EDITOR)
                                 },
                                 onNotificationsClick = {
-                                    currentScreen = StartScreen.NOTIFICATIONS
+                                    navigateTo(StartScreen.NOTIFICATIONS)
                                 },
                                 appearance = appearance,
-                                tasksForReminders = tasks
+                                user = AuthRepository().currentUser(),
+                                tasksForReminders = tasks,
+                                onRequestNotificationPermission = requestNotificationPermission
                             )
                         }
 
                         StartScreen.NOTIFICATIONS -> {
                             NotificationsScreen(
-                                onHomeClick = { currentScreen = StartScreen.HOME },
-                                onTasksClick = { currentScreen = StartScreen.TASKS },
+                                entries = notificationEntries,
+                                onReadNotification = { id ->
+                                    userId?.let { uid ->
+                                        notificationEntries.clear()
+                                        notificationEntries.addAll(
+                                            NotificationHistory.markRead(this@MainActivity, uid, id)
+                                        )
+                                    }
+                                },
+                                onMarkAllRead = {
+                                    userId?.let { uid ->
+                                        notificationEntries.clear()
+                                        notificationEntries.addAll(
+                                            NotificationHistory.markAllRead(this@MainActivity, uid)
+                                        )
+                                    }
+                                },
+                                onHomeClick = { resetNavigation(StartScreen.HOME) },
+                                onTasksClick = {
+                                    taskFilterOnEntry = TaskFilter.ALL
+                                    navigateTo(StartScreen.TASKS)
+                                },
                                 onAddClick = {
                                     selectedTaskId = null
-                                    currentScreen = StartScreen.TASK_EDITOR
+                                    navigateTo(StartScreen.TASK_EDITOR)
                                 },
-                                onSettingsClick = { currentScreen = StartScreen.SETTINGS }
+                                onSettingsClick = { navigateTo(StartScreen.SETTINGS) }
                             )
                         }
 
@@ -456,7 +616,7 @@ class MainActivity : ComponentActivity() {
                             ProfileScreen(
                                 user = AuthRepository().currentUser(),
                                 tasks = tasks,
-                                onBack = { currentScreen = StartScreen.SETTINGS },
+                                onBack = { navigateBack() },
                                 onSignOut = {
                                     lifecycleScope.launch {
                                         try {
@@ -471,7 +631,9 @@ class MainActivity : ComponentActivity() {
                                         canResendVerification = false
                                         selectedTaskId = null
                                         tasks.clear()
-                                        currentScreen = StartScreen.LOGIN
+                                        getSharedPreferences("uth_todo_startup", MODE_PRIVATE)
+                                            .edit { putBoolean("onboarding_completed", false) }
+                                        resetNavigation(StartScreen.LOGIN)
                                     }
                                 }
                             )
@@ -494,16 +656,21 @@ class MainActivity : ComponentActivity() {
                                 TaskDetailScreen(
                                     task = selectedTask,
                                     onBack = {
-                                        currentScreen = StartScreen.TASKS
+                                        navigateBack()
                                     },
                                     onEdit = {
-                                        currentScreen = StartScreen.TASK_EDITOR
+                                        navigateTo(StartScreen.TASK_EDITOR)
                                     },
                                     onToggleDone = {
                                         taskRepository.updateTaskDone(
                                             taskId = selectedTask.id,
                                             done = !selectedTask.done
                                         ) { result ->
+                                            result.onSuccess { changed ->
+                                                if (changed && !selectedTask.done) {
+                                                    recordTaskCompletion(selectedTask.id, selectedTask.title)
+                                                }
+                                            }
                                             result.onFailure { error ->
                                                 Toast.makeText(
                                                     this@MainActivity,
@@ -522,7 +689,7 @@ class MainActivity : ComponentActivity() {
                                         ) { result ->
                                             result.onSuccess {
                                                 selectedTaskId = null
-                                                currentScreen = StartScreen.TASKS
+                                            navigateBack()
                                                 Toast.makeText(
                                                     this@MainActivity,
                                                     getString(R.string.detail_deleted),
@@ -588,18 +755,14 @@ class MainActivity : ComponentActivity() {
                             TaskEditorScreen(
                                 initialDraft = initialDraft,
                                 onCancel = {
-                                    currentScreen = if (taskToEdit != null) {
-                                        StartScreen.TASK_DETAIL
-                                    } else {
-                                        StartScreen.TASKS
-                                    }
+                                    navigateBack()
                                 },
                                 onSave = { draft ->
                                     if (taskToEdit == null) {
                                         taskRepository.addTask(draft) { result ->
-                                            result.onSuccess {
-                                                selectedTaskId = null
-                                                currentScreen = StartScreen.TASKS
+                                            result.onSuccess { createdTaskId ->
+                                                selectedTaskId = createdTaskId
+                                                replaceCurrentScreen(StartScreen.TASK_DETAIL)
                                             }
 
                                             result.onFailure { error ->
@@ -619,7 +782,7 @@ class MainActivity : ComponentActivity() {
                                             draft = draft
                                         ) { result ->
                                             result.onSuccess {
-                                                currentScreen = StartScreen.TASK_DETAIL
+                                                navigateBack()
                                                 Toast.makeText(
                                                     this@MainActivity,
                                                     getString(R.string.detail_saved),
@@ -653,7 +816,7 @@ class MainActivity : ComponentActivity() {
                                                 .clearCredentialState(
                                                     ClearCredentialStateRequest()
                                                 )
-                                        } catch (e: Exception) {
+                                        } catch (_: Exception) {
                                             // Lỗi dọn trạng thái Credential Manager
                                             // không có nghĩa Firebase đã đăng xuất.
                                         }
@@ -662,7 +825,9 @@ class MainActivity : ComponentActivity() {
                                         AuthRepository().signOut()
                                         googleSignInBusy = false
                                         canResendVerification = false
-                                        currentScreen = StartScreen.LOGIN
+                                        getSharedPreferences("uth_todo_startup", MODE_PRIVATE)
+                                            .edit { putBoolean("onboarding_completed", false) }
+                                        resetNavigation(StartScreen.LOGIN)
                                     }
                                 }
                             )
@@ -670,14 +835,6 @@ class MainActivity : ComponentActivity() {
 
 
                         StartScreen.LOGIN -> {
-                            val showNotReady = {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    getString(R.string.login_not_ready),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-
                             LoginScreen(
                                 onGoogleClick = {
                                     if (!googleSignInBusy) {
@@ -697,7 +854,7 @@ class MainActivity : ComponentActivity() {
                                                     googleSignInBusy = false
 
                                                     val message: String = if (result.isSuccess) {
-                                                        currentScreen = StartScreen.HOME
+                                                        resetNavigation(StartScreen.HOME)
                                                         getString(R.string.login_google_success)
                                                     } else {
                                                         getString(R.string.login_google_failed)
@@ -709,10 +866,10 @@ class MainActivity : ComponentActivity() {
                                                         Toast.LENGTH_LONG
                                                     ).show()
                                                 }
-                                            } catch (e: GetCredentialCancellationException) {
+                                            } catch (_: GetCredentialCancellationException) {
                                                 // Người dùng hủy chọn Google: trở lại Login.
                                                 googleSignInBusy = false
-                                            } catch (e: Exception) {
+                                            } catch (_: Exception) {
                                                 googleSignInBusy = false
 
                                                 Toast.makeText(
@@ -725,7 +882,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onEmailClick = {
-                                    currentScreen = StartScreen.EMAIL_AUTH
+                                    navigateTo(StartScreen.EMAIL_AUTH)
                                 },
                                 onGithubClick = {
                                     val repository = AuthRepository()
@@ -735,7 +892,7 @@ class MainActivity : ComponentActivity() {
                                     ) { result ->
                                         if (result.isSuccess) {
                                             googleSignInBusy = false
-                                            currentScreen = StartScreen.HOME
+                                            resetNavigation(StartScreen.HOME)
 
                                             Toast.makeText(
                                                 this@MainActivity,
@@ -767,7 +924,7 @@ class MainActivity : ComponentActivity() {
                                     } else {
                                         repository.signInAnonymously { result ->
                                             if (result.isSuccess) {
-                                                currentScreen = StartScreen.HOME
+                                                resetNavigation(StartScreen.HOME)
                                             } else {
                                                 Toast.makeText(
                                                     this@MainActivity,

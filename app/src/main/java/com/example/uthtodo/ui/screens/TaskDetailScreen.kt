@@ -8,12 +8,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,7 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import com.example.uthtodo.ui.components.TodoModalSheet
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,15 +35,9 @@ import com.example.uthtodo.R
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.material3.OutlinedTextField
 import java.util.UUID
 
-private val DetailBlue = Color(0xFF2F5BEA)
-private val DetailBackground = Color(0xFFF5F5F7)
-private val DetailText = Color(0xFF1C1C1E)
-private val DetailGray = Color(0xFF6B6B70)
 private val DetailRed = Color(0xFFC4321F)
-private val DetailDivider = Color(0xFFEDEDF0)
 
 @Composable
 fun TaskDetailScreen(
@@ -49,11 +49,14 @@ fun TaskDetailScreen(
     onSubtasksChange: (List<HomeSubtask>) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val colorScheme = MaterialTheme.colorScheme
+    val accent = colorScheme.primary
+    val DetailBackground = colorScheme.background
+    val DetailText = colorScheme.onBackground
+    val DetailGray = colorScheme.onSurfaceVariant
+    val DetailDivider = colorScheme.outline.copy(alpha = 0.35f)
 
     val categoryIsStudy = task.category == HomeTaskCategory.STUDY
-    val completedSubtasks = task.subtasks.count { it.done }
-    val subtaskProgress = if (task.subtasks.isEmpty()) 0f
-    else completedSubtasks.toFloat() / task.subtasks.size
 
     val priorityLabel = when (task.priority) {
         "low" -> stringResource(R.string.task_priority_low)
@@ -62,29 +65,35 @@ fun TaskDetailScreen(
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(R.string.detail_delete_title)) },
-            text = { Text(stringResource(R.string.detail_delete_message)) },
-            confirmButton = {
-                TextButton(
+        TodoModalSheet(onDismissRequest = { showDeleteDialog = false }) {
+            Text(
+                stringResource(R.string.detail_delete_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.detail_delete_message),
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    onClick = { showDeleteDialog = false },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp)
+                ) { Text(stringResource(R.string.task_editor_cancel)) }
+                Button(
                     onClick = {
                         showDeleteDialog = false
                         onDelete()
-                    }
-                ) {
-                    Text(
-                        stringResource(R.string.detail_delete),
-                        color = DetailRed
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text(stringResource(R.string.task_editor_cancel))
-                }
+                    },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DetailRed)
+                ) { Text(stringResource(R.string.detail_delete)) }
             }
-        )
+        }
     }
 
     Column(
@@ -110,12 +119,12 @@ fun TaskDetailScreen(
                 Icon(
                     painter = painterResource(R.drawable.ic_detail_back),
                     contentDescription = null,
-                    tint = DetailBlue,
+                    tint = accent,
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
                     stringResource(R.string.tasks_title),
-                    color = DetailBlue,
+                    color = accent,
                     fontSize = 16.sp
                 )
             }
@@ -123,7 +132,7 @@ fun TaskDetailScreen(
             TextButton(onClick = onEdit) {
                 Text(
                     stringResource(R.string.detail_edit),
-                    color = DetailBlue,
+                    color = accent,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -163,7 +172,7 @@ fun TaskDetailScreen(
                     Box(
                         modifier = Modifier
                             .background(
-                                Color(0xFFE9E9EE),
+                                colorScheme.surfaceVariant,
                                 RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 10.dp, vertical = 5.dp)
@@ -198,7 +207,7 @@ fun TaskDetailScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.White)
+                    .background(colorScheme.surface)
             ) {
                 Row(
                     modifier = Modifier
@@ -266,118 +275,10 @@ fun TaskDetailScreen(
                 }
             }
 
-            if (task.note.isNotBlank()) {
-                DetailSubtasksSection(
-                    task = task,
-                    onSubtasksChange = onSubtasksChange
-                )
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    DetailSectionTitle(stringResource(R.string.detail_subtasks))
-                    Text(
-                        "$completedSubtasks/${task.subtasks.size}",
-                        color = DetailGray,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFE9E9EE))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(subtaskProgress)
-                            .fillMaxHeight()
-                            .background(DetailBlue)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
-                ) {
-                    task.subtasks.forEachIndexed { index, subtask ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 52.dp)
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .then(
-                                        if (subtask.done) {
-                                            Modifier.background(
-                                                DetailBlue,
-                                                RoundedCornerShape(6.dp)
-                                            )
-                                        } else {
-                                            Modifier.border(
-                                                2.dp,
-                                                Color(0xFFC7C7CC),
-                                                RoundedCornerShape(6.dp)
-                                            )
-                                        }
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (subtask.done) {
-                                    Icon(
-                                        painter = painterResource(
-                                            R.drawable.ic_detail_check
-                                        ),
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                subtask.title,
-                                color = if (subtask.done) DetailGray
-                                else DetailText,
-                                fontSize = 15.sp,
-                                textDecoration = if (subtask.done) {
-                                    TextDecoration.LineThrough
-                                } else TextDecoration.None
-                            )
-                        }
-
-                        if (index != task.subtasks.lastIndex) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(DetailDivider)
-                            )
-                        }
-                    }
-
-                    if (task.subtasks.isEmpty()) {
-                        Text(
-                            stringResource(R.string.detail_subtasks_empty),
-                            modifier = Modifier.padding(16.dp),
-                            color = DetailGray,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
+            DetailSubtasksSection(
+                task = task,
+                onSubtasksChange = onSubtasksChange
+            )
         }
 
         Column(
@@ -398,7 +299,7 @@ fun TaskDetailScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DetailBlue
+                    containerColor = accent
                 )
             ) {
                 Text(
@@ -426,7 +327,7 @@ fun TaskDetailScreen(
 private fun DetailSectionTitle(text: String) {
     Text(
         text = text,
-        color = DetailGray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold
     )
@@ -442,7 +343,7 @@ private fun formatDetailDate(date: String): String {
         today -> stringResource(R.string.tasks_today)
         today.plusDays(1) -> stringResource(R.string.tasks_tomorrow)
         else -> parsed.format(
-            DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+            DateTimeFormatter.ofPattern("dd/MM/yyyy", LocalConfiguration.current.locales[0] ?: Locale.getDefault())
         )
     }
 }
@@ -453,110 +354,47 @@ private fun DetailSubtasksSection(
     task: HomeTask,
     onSubtasksChange: (List<HomeSubtask>) -> Unit
 ) {
-    var editorVisible by remember { mutableStateOf(false) }
     var editingId by remember { mutableStateOf<String?>(null) }
-    var inputTitle by remember { mutableStateOf("") }
+    var editedTitle by remember { mutableStateOf("") }
+    var newTitle by remember { mutableStateOf("") }
 
     var deletingId by remember { mutableStateOf<String?>(null) }
 
+    val colorScheme = MaterialTheme.colorScheme
+    val detailText = colorScheme.onBackground
+    val detailGray = colorScheme.onSurfaceVariant
+    val detailRed = colorScheme.error
+    val detailDivider = colorScheme.outline.copy(alpha = 0.35f)
+
     val completed = task.subtasks.count { it.done }
-
-    // Hộp thoại thêm / sửa việc nhỏ
-    if (editorVisible) {
-        AlertDialog(
-            onDismissRequest = { editorVisible = false },
-            title = {
-                Text(
-                    stringResource(
-                        if (editingId == null)
-                            R.string.subtask_add_title
-                        else
-                            R.string.subtask_edit_title
-                    )
-                )
-            },
-            text = {
-                OutlinedTextField(
-                    value = inputTitle,
-                    onValueChange = { inputTitle = it },
-                    label = {
-                        Text(stringResource(R.string.subtask_name))
-                    },
-                    singleLine = true
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = inputTitle.isNotBlank(),
-                    onClick = {
-                        val title = inputTitle.trim()
-                        val id = editingId
-
-                        val updated = if (id == null) {
-                            task.subtasks + HomeSubtask(
-                                id = UUID.randomUUID().toString(),
-                                title = title,
-                                done = false
-                            )
-                        } else {
-                            task.subtasks.map { item ->
-                                if (item.id == id) {
-                                    item.copy(title = title)
-                                } else {
-                                    item
-                                }
-                            }
-                        }
-
-                        onSubtasksChange(updated)
-                        editorVisible = false
-                    }
-                ) {
-                    Text(stringResource(R.string.detail_saved_button))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { editorVisible = false }) {
-                    Text(stringResource(R.string.task_editor_cancel))
-                }
-            }
-        )
-    }
 
     // Hộp thoại xác nhận xóa việc nhỏ
     if (deletingId != null) {
-        AlertDialog(
-            onDismissRequest = { deletingId = null },
-            title = {
-                Text(stringResource(R.string.subtask_delete_title))
-            },
-            text = {
-                Text(stringResource(R.string.subtask_delete_message))
-            },
-            confirmButton = {
-                TextButton(
+        TodoModalSheet(onDismissRequest = { deletingId = null }) {
+            Text(
+                stringResource(R.string.subtask_delete_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(stringResource(R.string.subtask_delete_message), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    onClick = { deletingId = null },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp)
+                ) { Text(stringResource(R.string.task_editor_cancel)) }
+                Button(
                     onClick = {
-                        val id = deletingId
-                        if (id != null) {
-                            onSubtasksChange(
-                                task.subtasks.filterNot { it.id == id }
-                            )
-                        }
+                        deletingId?.let { id -> onSubtasksChange(task.subtasks.filterNot { it.id == id }) }
                         deletingId = null
-                    }
-                ) {
-                    Text(
-                        stringResource(R.string.detail_delete),
-                        color = Color(0xFFC4321F)
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { deletingId = null }) {
-                    Text(stringResource(R.string.task_editor_cancel))
-                }
+                    },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = detailRed)
+                ) { Text(stringResource(R.string.detail_delete)) }
             }
-        )
+        }
     }
 
     Column(
@@ -573,7 +411,7 @@ private fun DetailSubtasksSection(
 
             Text(
                 "$completed/${task.subtasks.size}",
-                color = Color(0xFF6B6B70),
+                color = detailGray,
                 fontSize = 13.sp
             )
         }
@@ -589,13 +427,13 @@ private fun DetailSubtasksSection(
                 .fillMaxWidth()
                 .height(6.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFE9E9EE))
+                .background(colorScheme.surfaceVariant)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(progress)
                     .fillMaxHeight()
-                    .background(Color(0xFF2F5BEA))
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
 
@@ -603,7 +441,7 @@ private fun DetailSubtasksSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
+                .background(colorScheme.surface)
         ) {
             task.subtasks.forEachIndexed { index, item ->
                 Row(
@@ -637,7 +475,7 @@ private fun DetailSubtasksSection(
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(
                                     if (item.done)
-                                        Color(0xFF2F5BEA)
+                                        MaterialTheme.colorScheme.primary
                                     else
                                         Color.Transparent
                                 )
@@ -646,7 +484,7 @@ private fun DetailSubtasksSection(
                                     color = if (item.done)
                                         Color.Transparent
                                     else
-                                        Color(0xFFC7C7CC),
+                                        colorScheme.outline,
                                     shape = RoundedCornerShape(6.dp)
                                 ),
                             contentAlignment = Alignment.Center
@@ -664,27 +502,48 @@ private fun DetailSubtasksSection(
                         }
                     }
 
-                    // Nhấn tên để sửa
-                    Text(
-                        text = item.title,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                editingId = item.id
-                                inputTitle = item.title
-                                editorVisible = true
+                    if (editingId == item.id) {
+                        BasicTextField(
+                            value = editedTitle,
+                            onValueChange = { editedTitle = it },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        )
+                        TextButton(
+                            enabled = editedTitle.isNotBlank(),
+                            onClick = {
+                                val title = editedTitle.trim()
+                                onSubtasksChange(task.subtasks.map { subtask ->
+                                    if (subtask.id == item.id) subtask.copy(title = title) else subtask
+                                })
+                                editingId = null
                             }
-                            .padding(vertical = 12.dp),
-                        fontSize = 14.sp,
-                        color = if (item.done)
-                            Color(0xFF6B6B70)
-                        else
-                            Color(0xFF1C1C1E),
-                        textDecoration = if (item.done)
-                            TextDecoration.LineThrough
-                        else
-                            TextDecoration.None
-                    )
+                        ) { Text(stringResource(R.string.detail_saved_button)) }
+                    } else {
+                        Text(
+                            text = item.title,
+                            modifier = Modifier.weight(1f).padding(vertical = 12.dp),
+                            fontSize = 14.sp,
+                            color = if (item.done) detailGray else detailText,
+                            textDecoration = if (item.done) TextDecoration.LineThrough
+                                else TextDecoration.None
+                        )
+                        Icon(
+                            painter = painterResource(R.drawable.ic_detail_edit),
+                            contentDescription = stringResource(R.string.subtask_edit_title),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp).clickable {
+                                editingId = item.id
+                                editedTitle = item.title
+                            }
+                        )
+                    }
 
                     // Xóa việc nhỏ
                     Icon(
@@ -694,7 +553,7 @@ private fun DetailSubtasksSection(
                         contentDescription = stringResource(
                             R.string.subtask_delete_title
                         ),
-                        tint = Color(0xFF6B6B70),
+                        tint = detailRed,
                         modifier = Modifier
                             .size(20.dp)
                             .clickable { deletingId = item.id }
@@ -706,7 +565,7 @@ private fun DetailSubtasksSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp)
-                            .background(Color(0xFFEDEDF0))
+                            .background(detailDivider)
                     )
                 }
             }
@@ -715,34 +574,61 @@ private fun DetailSubtasksSection(
                 Text(
                     stringResource(R.string.detail_subtasks_empty),
                     modifier = Modifier.padding(16.dp),
-                    color = Color(0xFF6B6B70),
+                    color = detailGray,
                     fontSize = 14.sp
                 )
             }
 
-            TextButton(
-                onClick = {
-                    editingId = null
-                    inputTitle = ""
-                    editorVisible = true
-                },
-                modifier = Modifier.padding(start = 8.dp)
+            if (task.subtasks.isNotEmpty()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Icon(
-                    painter = painterResource(
-                        R.drawable.ic_detail_add
-                    ),
+                    painter = painterResource(R.drawable.ic_detail_add),
                     contentDescription = null,
-                    tint = Color(0xFF2F5BEA),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
-
-                Spacer(Modifier.width(8.dp))
-
-                Text(
-                    stringResource(R.string.subtask_add),
-                    color = Color(0xFF2F5BEA)
+                BasicTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (newTitle.isBlank()) {
+                                Text(
+                                    stringResource(R.string.subtask_add),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
+                TextButton(
+                    enabled = newTitle.isNotBlank(),
+                    onClick = {
+                        val title = newTitle.trim()
+                        if (title.isNotEmpty()) {
+                            onSubtasksChange(
+                                task.subtasks + HomeSubtask(UUID.randomUUID().toString(), title)
+                            )
+                            newTitle = ""
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.subtask_add_action))
+                }
             }
         }
     }

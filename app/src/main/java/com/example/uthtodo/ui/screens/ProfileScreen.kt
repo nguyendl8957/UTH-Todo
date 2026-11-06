@@ -7,6 +7,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
+import com.example.uthtodo.ui.components.avatarInitials
+import com.example.uthtodo.ui.components.TodoModalSheet
 import com.google.firebase.auth.FirebaseUser
 import java.time.LocalDate
 import java.time.ZoneId
@@ -32,17 +38,48 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onSignOut: () -> Unit
 ) {
+    var showSignOutConfirmation by rememberSaveable { mutableStateOf(false) }
     val completed = tasks.count { it.done }
     val pending = tasks.size - completed
     val percent = if (tasks.isEmpty()) 0 else (completed * 100f / tasks.size).toInt()
     val anonymous = user == null || user.isAnonymous
+    val accountName = user?.displayName?.takeIf { it.isNotBlank() }
+        ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
     val displayName = if (anonymous) stringResource(R.string.uth_profile_guest)
-    else user?.displayName?.takeIf { it.isNotBlank() }
-        ?: user.email?.substringBefore('@')
-        ?: stringResource(R.string.uth_profile_guest)
-    val initials = if (anonymous) "K" else displayName.split(' ')
-        .filter { it.isNotBlank() }.takeLast(2)
-        .joinToString("") { it.take(1).uppercase() }.ifEmpty { "?" }
+        else accountName ?: stringResource(R.string.uth_profile_guest)
+    val initials = avatarInitials(accountName, anonymous)
+
+    if (showSignOutConfirmation) {
+        TodoModalSheet(onDismissRequest = { showSignOutConfirmation = false }) {
+            Text(
+                stringResource(R.string.uth_signout_confirm_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(R.string.uth_signout_confirm_message),
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    onClick = { showSignOutConfirmation = false },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp)
+                ) { Text(stringResource(R.string.task_editor_cancel)) }
+                Button(
+                    onClick = {
+                        showSignOutConfirmation = false
+                        onSignOut()
+                    },
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.uth_profile_signout)) }
+            }
+        }
+    }
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
@@ -85,7 +122,7 @@ fun ProfileScreen(
             }
         }
         TextButton(
-            onClick = onSignOut,
+            onClick = { showSignOutConfirmation = true },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             Icon(painterResource(R.drawable.ic_profile_logout), contentDescription = null,

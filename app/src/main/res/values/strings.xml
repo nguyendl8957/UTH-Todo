@@ -148,6 +148,7 @@
 
     <!-- Subtasks -->
     <string name="subtask_add">Thêm việc nhỏ</string>
+    <string name="subtask_add_action">Thêm</string>
     <string name="subtask_add_title">Thêm việc nhỏ</string>
     <string name="subtask_edit_title">Sửa việc nhỏ</string>
     <string name="subtask_name">Tên việc nhỏ</string>
@@ -196,4 +197,35 @@
 
     <string name="uth_reminder_body">Một công việc sắp đến hạn.</string>
     <string name="uth_daily_summary_body">Đã xong %1$d việc · Còn %2$d việc</string>
+
+    <string name="email_screen_back">← Quay lại</string>
+    <string name="email_screen_sign_in_title">Đăng nhập Email</string>
+    <string name="email_screen_register_title">Đăng ký tài khoản</string>
+    <string name="email_screen_email_label">Email</string>
+    <string name="email_screen_password_label">Mật khẩu</string>
+    <string name="email_screen_register_action">Đăng ký</string>
+    <string name="email_screen_sign_in_action">Đăng nhập</string>
+    <string name="email_screen_existing_account">Đã có tài khoản? Đăng nhập</string>
+    <string name="email_screen_new_account">Chưa có tài khoản? Đăng ký</string>
+    <string name="email_screen_forgot_password">Quên mật khẩu?</string>
+    <string name="uth_notifications_mark_all_read">Đánh dấu đã đọc</string>
+    <string name="uth_notification_type_reminder">Sắp đến hạn</string>
+    <string name="uth_notification_type_summary">Tổng kết cuối ngày</string>
+    <string name="uth_notification_type_other">Thông báo</string>
+    <string name="uth_notification_type_completion">Làm tốt lắm!</string>
+    <string name="uth_notification_task_completed">Bạn đã hoàn thành công việc: %1$s</string>
+    <string name="uth_notification_task_due">%1$s lúc %2$s.</string>
+    <string name="uth_signout_confirm_title">Đăng xuất?</string>
+    <string name="uth_signout_confirm_message">Bạn có chắc muốn đăng xuất khỏi tài khoản này không?</string>
+    <string name="uth_notification_yesterday">Hôm qua</string>
+    <string name="uth_notification_type_overdue">Đã quá hạn</string>
+    <string name="uth_notification_task_overdue">%1$s chưa hoàn thành. Hạn chót %2$s.</string>
+    <string name="uth_notification_summary_generic">Tổng kết công việc trong ngày của bạn.</string>
+    <string name="uth_time_am">SA</string>
+    <string name="uth_time_pm">CH</string>
+    <string name="settings_language_vietnamese">Tiếng Việt</string>
+    <string name="settings_language_english">Tiếng Anh</string>
+    <string name="settings_language_chinese">Tiếng Trung giản thể</string>
+    <string name="settings_language_japanese">Tiếng Nhật</string>
+    <string name="settings_language_korean">Tiếng Hàn</string>
 </resources>

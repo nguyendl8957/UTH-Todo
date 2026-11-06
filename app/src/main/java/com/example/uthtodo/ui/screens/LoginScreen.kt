@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
-import com.example.uthtodo.ui.theme.UTHColors
+import com.example.uthtodo.ui.components.BrandMark
 
 @Composable
 fun LoginScreen(
@@ -79,18 +79,12 @@ fun LoginScreen(
                     modifier = Modifier
                         .size(92.dp)
                         .background(
-                            color = UTHColors.Primary,
+                            color = colors.primary,
                             shape = RoundedCornerShape(24.dp)
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(
-                            R.drawable.ic_onboarding_1_1
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp)
-                    )
+                    BrandMark(colors.primary, Modifier.size(64.dp), onPrimaryTile = true)
                 }
 
                 Spacer(Modifier.height(28.dp))

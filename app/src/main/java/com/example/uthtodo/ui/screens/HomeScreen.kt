@@ -17,8 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,10 +29,12 @@ import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
 import com.example.uthtodo.ui.components.TodoBottomBar
 import com.example.uthtodo.ui.components.TodoTab
+import com.example.uthtodo.ui.components.avatarInitials
 import com.google.firebase.auth.FirebaseUser
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import android.text.format.DateFormat as AndroidDateFormat
 
 import androidx.compose.ui.draw.shadow
 
@@ -38,6 +42,10 @@ private val StudyBackground = Color(0xFFE6EDFF)
 private val StudyText = Color(0xFF1F4FD1)
 private val LifeBackground = Color(0xFFFFEBD9)
 private val LifeText = Color(0xFFA24A08)
+private val StudyDarkBackground = Color(0xFF252F56)
+private val StudyDarkText = Color(0xFFB6C5FF)
+private val LifeDarkBackground = Color(0xFF49301B)
+private val LifeDarkText = Color(0xFFFFBE88)
 
 // Mô hình tạm cho giao diện. Sau này Repository cung cấp dữ liệu.
 enum class HomeTaskCategory {
@@ -80,14 +88,15 @@ fun HomeScreen(
     onAddClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    val darkSurface = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     val today = SimpleDateFormat(
         "yyyy-MM-dd", locale
     ).format(Date())
 
     val displayDate = SimpleDateFormat(
-        "EEEE, d MMMM", locale
+        AndroidDateFormat.getBestDateTimePattern(locale, "EEEE, d MMMM"), locale
     ).format(Date()).replaceFirstChar { it.titlecase(locale) }
 
     val todayTasks = tasks
@@ -107,18 +116,9 @@ fun HomeScreen(
         ?.takeIf { it.isNotEmpty() }
 
     val isGuest = user == null || user.isAnonymous
-
-    val initials = if (isGuest) {
-        "K"
-    } else {
-        displayName.orEmpty()
-            .split(" ")
-            .filter { it.isNotBlank() }
-            .takeLast(2)
-            .map { it.first().uppercaseChar() }
-            .joinToString("")
-            .ifEmpty { "?" }
-    }
+    val avatarName = displayName
+        ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
+    val initials = avatarInitials(avatarName, isGuest)
 
     val greeting = if (isGuest || displayName == null) {
         stringResource(R.string.home_greeting_guest)
@@ -156,13 +156,13 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(StudyBackground)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                             .clickable(onClick = onAvatarClick),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = initials,
-                            color = StudyText,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -239,8 +239,8 @@ fun HomeScreen(
                         title = stringResource(R.string.home_study),
                         remaining = remainingStudy,
                         icon = R.drawable.ic_home_study,
-                        background = StudyBackground,
-                        iconTint = StudyText,
+                        background = if (darkSurface) StudyDarkBackground else StudyBackground,
+                        iconTint = if (darkSurface) StudyDarkText else StudyText,
                         onClick = onStudyClick,
                         modifier = Modifier.weight(1f)
                     )
@@ -249,8 +249,8 @@ fun HomeScreen(
                         title = stringResource(R.string.home_life),
                         remaining = remainingLife,
                         icon = R.drawable.ic_home_life,
-                        background = LifeBackground,
-                        iconTint = LifeText,
+                        background = if (darkSurface) LifeDarkBackground else LifeBackground,
+                        iconTint = if (darkSurface) LifeDarkText else LifeText,
                         onClick = onLifeClick,
                         modifier = Modifier.weight(1f)
                     )
@@ -541,7 +541,7 @@ private fun HomeTaskRow(
             ) {
                 Text(
                     text = task.title,
-                    fontSize = 15.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (task.done) {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -570,7 +570,7 @@ private fun HomeTaskRow(
                                 R.string.home_life
                             }
                         ),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (study) StudyText else LifeText,
                         modifier = Modifier
@@ -591,7 +591,7 @@ private fun HomeTaskRow(
                     Text(
                         text = task.time,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                        fontSize = 14.sp
                     )
                 }
             }

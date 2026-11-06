@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.work:work-runtime:2.12.0")
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -56,9 +57,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     // Firebase Authentication: đăng nhập, đăng ký, quản lý tài khoản
     implementation("com.google.firebase:firebase-auth")
-    // Firebase Analytics: thống kê hoạt động ứng dụng
-    implementation("com.google.firebase:firebase-analytics")
-
     // Quản lý thông tin đăng nhập và giao diện chọn tài khoản
     implementation("androidx.credentials:credentials:1.6.0")
     // Kết nối Credential Manager với Google Play Services
@@ -67,4 +65,5 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     implementation("com.google.firebase:firebase-firestore")
+
 }

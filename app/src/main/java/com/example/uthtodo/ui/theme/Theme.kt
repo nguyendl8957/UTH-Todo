@@ -5,6 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Color
 
 @Composable
@@ -38,5 +41,11 @@ fun UTHTodoTheme(
             outline = Color(0xFFD8D8DE)
         )
     }
-    MaterialTheme(colorScheme = scheme, typography = Typography, content = content)
+    val baseDensity = LocalDensity.current
+    MaterialTheme(colorScheme = scheme, typography = Typography) {
+        CompositionLocalProvider(
+            LocalDensity provides Density(baseDensity.density, baseDensity.fontScale * 1.12f),
+            content = content
+        )
+    }
 }

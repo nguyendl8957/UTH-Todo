@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,14 +25,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.example.uthtodo.R
-import com.example.uthtodo.ui.theme.UTHColors
+import com.example.uthtodo.ui.components.BrandMark
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.ui.res.stringResource
 
@@ -41,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 fun SplashScreen(
     onFinished: () -> Unit
 ) {
+    val primary = MaterialTheme.colorScheme.primary
     // Sau 2 giây, báo cho màn hình cha chuyển tiếp.
     LaunchedEffect(Unit) {
         delay(2000)
@@ -50,7 +50,7 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(UTHColors.Primary)
+            .background(primary)
             .clickable { onFinished() }
     ) {
         Column(
@@ -65,13 +65,7 @@ fun SplashScreen(
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(
-                        id = R.drawable.ic_uth_todo_logo
-                    ),
-                    contentDescription = "Logo UTH Todo",
-                    modifier = Modifier.size(88.dp)
-                )
+                BrandMark(primary, Modifier.size(88.dp))
             }
 
             Column(

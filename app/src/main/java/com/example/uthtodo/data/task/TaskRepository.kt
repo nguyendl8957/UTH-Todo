@@ -61,12 +61,7 @@ class TaskRepository(
                     "life" -> HomeTaskCategory.LIFE
                     else -> return@mapNotNull null
                 }
-                val subtasks = (doc.get("subtasks") as? List<*>).orEmpty().mapNotNull { raw ->
-                    val map = raw as? Map<*, *> ?: return@mapNotNull null
-                    val id = map["id"] as? String ?: return@mapNotNull null
-                    val subtitle = map["title"] as? String ?: return@mapNotNull null
-                    HomeSubtask(id, subtitle, map["done"] as? Boolean ?: false)
-                }
+                val subtasks = mapTaskSubtasks(doc.id, doc.get("subtasks") as? List<*>)
                 HomeTask(
                     id = doc.id,
                     title = title,
@@ -85,16 +80,23 @@ class TaskRepository(
         }
     }
 
-    fun updateTaskDone(taskId: String, done: Boolean, onResult: (Result<Unit>) -> Unit) {
+    fun updateTaskDone(taskId: String, done: Boolean, onResult: (Result<Boolean>) -> Unit) {
         val collection = tasksCollection() ?: run {
             onResult(Result.failure(notSignedIn())); return
         }
-        val fields: Map<String, Any> = mapOf(
-            "done" to done,
-            "completedAt" to if (done) FieldValue.serverTimestamp() else FieldValue.delete()
-        )
-        collection.document(taskId).update(fields)
-            .addOnSuccessListener { onResult(Result.success(Unit)) }
+        val document = collection.document(taskId)
+        collection.firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(document)
+            val wasDone = snapshot.getBoolean("done") ?: false
+            if (wasDone == done) return@runTransaction false
+            val fields: Map<String, Any> = mapOf(
+                "done" to done,
+                "completedAt" to if (done) FieldValue.serverTimestamp() else FieldValue.delete()
+            )
+            transaction.update(document, fields)
+            true
+        }
+            .addOnSuccessListener { changed -> onResult(Result.success(changed)) }
             .addOnFailureListener { onResult(Result.failure(it)) }
     }
 
