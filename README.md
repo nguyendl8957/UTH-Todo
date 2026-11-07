@@ -2,197 +2,81 @@
 
 
 
-\*\*A modern Android task management application built with Kotlin, Jetpack Compose, and Firebase.\*\*
+# UTH Todo
 
+**An Android task manager built with Kotlin, Jetpack Compose, and Firebase.**
 
+UTH Todo helps users organize daily tasks, track completion progress, and stay on schedule. It combines a native Android interface with Firebase Authentication and per-user task storage in Cloud Firestore.
 
-UTH Todo helps users organize everyday tasks, track completion progress, and stay on schedule with reminders. The application supports multiple authentication methods, cloud data synchronization, customizable appearance, and multilingual interfaces.
+[**Download APK**](https://github.com/nguyendl8957/UTH-Todo/releases/latest) · [**GitHub Releases**](https://github.com/nguyendl8957/UTH-Todo/releases) · [**Google Drive download**](https://drive.google.com/file/d/1YLc9B3_ilNt3cmPmaETMS5C6riBsuX8q/view)
 
+## App Preview
 
-
-\*\*\[Download Latest APK](https://github.com/nguyendl8957/UTH-Todo/releases/latest)\*\* · \*\*\[View Releases](https://github.com/nguyendl8957/UTH-Todo/releases)\*\* · \*\*\[Project Overview (PDF)](docs/UTH-Todo-Project-Overview.pdf)\*\*
-
-
-
-
-
-\## App Preview
-
-
-
-| Home | Tasks | Task Detail | Settings |
-
+| Home | Add Task | Task Details | Settings |
 |:---:|:---:|:---:|:---:|
+| <img src="docs/images/home.png" width="190" alt="UTH Todo home screen"> | <img src="docs/images/add-task.png" width="190" alt="Create a task"> | <img src="docs/images/task-detail.png" width="190" alt="Task details and subtasks"> | <img src="docs/images/settings.png" width="190" alt="Appearance and preferences"> |
 
-| <img src="docs/images/home.png" width="190" alt="Home screen"> | <img src="docs/images/tasks.png" width="190" alt="Tasks screen"> | <img src="docs/images/task-detail.png" width="190" alt="Task detail screen"> | <img src="docs/images/settings.png" width="190" alt="Settings screen"> |
+## Features
 
+- **Authentication:** Google, Email/Password, GitHub, and anonymous guest sign-in through Firebase Authentication.
+- **Task management:** Create, edit, complete, and delete tasks and subtasks; set dates, times, categories, and priorities.
+- **Cloud storage:** Store tasks in Cloud Firestore under each authenticated user's UID.
+- **Reminders:** Schedule on-device Android notifications for upcoming tasks.
+- **Progress:** View task completion progress and statistics.
+- **Personalization:** Light/dark appearance, accent colors, and saved preferences.
+- **Five UI languages:** Vietnamese, English, Simplified Chinese, Japanese, and Korean.
+- **Persistent sign-in:** Return to the app without repeating sign-in while a valid session exists.
 
+## Tech Stack
 
-\## Key Features
+| Area | Technology |
+|---|---|
+| Language | Kotlin |
+| UI | Jetpack Compose |
+| Backend | Firebase Authentication, Cloud Firestore |
+| Reminders | Android notifications, AlarmManager |
+| Build | Gradle with Kotlin DSL |
+| IDE | Android Studio |
 
+## Data and Security
 
+Task documents use the Firestore path:
 
-\- \*\*Authentication:\*\* Google Sign-In, Email/Password, GitHub OAuth, and anonymous guest access using Firebase Authentication.
+```text
+users/{uid}/tasks/{taskId}
+```
 
-\- \*\*Cloud Synchronization:\*\* Store and synchronize personal tasks through Cloud Firestore.
+Firestore Security Rules restrict task access to the authenticated user whose UID matches the path. Firebase configuration and signing keys are not included in this public repository.
 
-\- \*\*Task Management:\*\* Create, edit, complete, and delete tasks and subtasks.
+## Run Locally
 
-\- \*\*Reminders:\*\* Schedule local Android notifications for upcoming tasks.
+1. Clone the repository:
 
-\- \*\*Personalization:\*\* Light and dark themes, accent color options, and appearance preferences.
+   ```bash
+   git clone https://github.com/nguyendl8957/UTH-Todo.git
+   ```
 
-\- \*\*Multilingual UI:\*\* Vietnamese, English, Simplified Chinese, Japanese, and Korean.
+2. Open the project in Android Studio and sync Gradle.
+3. Set up a Firebase project with Android application ID `com.example.uthtodo` (or adapt the project configuration for your own application ID).
+4. Place the matching Firebase configuration in `app/google-services.json`.
+5. Enable the required Firebase Authentication providers, set up Cloud Firestore and its user-scoped Security Rules, and configure the relevant OAuth credentials.
+6. Run the app on an Android emulator or device.
 
-\- \*\*Task Progress:\*\* Track task completion and view progress statistics.
+> **Setup note:** A fresh clone requires your own Firebase configuration. OAuth providers may also need signing certificate fingerprints and provider-specific setup. Do not commit passwords, OAuth client secrets, or signing keystores.
 
-\- \*\*Session Persistence:\*\* Keep users signed in between app launches.
+## Release and Installation
 
+**Latest stable release:** [v1.1.0](https://github.com/nguyendl8957/UTH-Todo/releases/tag/v1.1.0)
 
+- [Download the signed Android APK from GitHub](https://github.com/nguyendl8957/UTH-Todo/releases/latest)
+- [Alternative APK download via Google Drive](https://drive.google.com/file/d/1YLc9B3_ilNt3cmPmaETMS5C6riBsuX8q/view)
 
-\## Technology Stack
+Install the APK on a compatible Android device. The signed release has a different certificate from the earlier debug build, so it generally cannot update that debug installation in place.
 
+## Project Background and Credits
 
+UTH Todo was developed for a mobile application development course at the **University of Transport Ho Chi Minh City (UTH)**. The interface is based on the instructor-provided UTH Todo Design Share prototype and adapted for native Android with Jetpack Compose. Firebase integration and Android-specific behavior are part of this application implementation.
 
-| Category                | Technology                                     |
+## Author
 
-| ----------------------- | ---------------------------------------------- |
-
-| Language                | Kotlin                                         |
-
-| UI Framework            | Jetpack Compose                                |
-
-| Backend Services        | Firebase Authentication, Cloud Firestore       |
-
-| Asynchronous Operations | Kotlin Coroutines / Firebase asynchronous APIs |
-
-| Notifications           | Android notification system and AlarmManager   |
-
-| Build System            | Gradle with Kotlin DSL                         |
-
-| Development Environment | Android Studio                                 |
-
-
-
-\## Data and Security
-
-
-
-Tasks are organized under user-specific Firestore paths:
-
-
-
-`users/{uid}/tasks/{taskId}`
-
-
-
-Firestore Security Rules are used to restrict access based on authenticated user identity.
-
-
-
-\## Getting Started
-
-
-
-1\. Clone this repository:
-
-
-
-&#x20;  ```bash
-
-&#x20;  git clone https://github.com/nguyendl8957/UTH-Todo.git
-
-&#x20;  ```
-
-
-
-2\. Open the project in Android Studio.
-
-
-
-3\. Configure a Firebase project and register an Android application with the appropriate application ID.
-
-
-
-4\. Place your Firebase Android configuration file at `app/google-services.json`.
-
-
-
-5\. Configure the required authentication providers and Firestore Security Rules.
-
-
-
-6\. Sync Gradle and run the application on an Android device or emulator.
-
-
-
-\*\*Note:\*\* The Firebase configuration used by the developer is not included in the public repository. Some authentication providers require additional Firebase or OAuth setup before they can be tested in another environment.
-
-
-
-\## Download and Installation
-
-
-
-\### Latest Stable Release — v1.1.0
-
-
-
-UTH Todo is available as a signed Android APK.
-
-
-
-\- \[Download APK from GitHub Releases](https://github.com/nguyendl8957/UTH-Todo/releases/latest)
-
-\- \[Download APK from Google Drive](https://drive.google.com/file/d/1YLc9B3\_ilNt3cmPmaETMS5C6riBsuX8q/view)
-
-
-
-Download the APK and install it on a compatible Android device.
-
-
-
-> Note: This release is signed with a dedicated release key.
-
-> It cannot normally be installed directly over the previous
-
-> debug-signed version.
-
-
-
-\## Project Background
-
-
-
-UTH Todo was developed as an Android application project for a mobile application development course at the University of Transport Ho Chi Minh City (UTH).
-
-
-
-The project explores native Android UI development, authentication, cloud data persistence, and mobile application lifecycle management.
-
-
-
-\## Author
-
-
-
-\*\*Đặng Lâm Nguyên\*\*
-
-
-
-GitHub: \[@nguyendl8957](https://github.com/nguyendl8957)
-
-
-
-\## Release
-
-
-
-\*\*Latest stable release:\*\* \[v1.1.0](https://github.com/nguyendl8957/UTH-Todo/releases/tag/v1.1.0)
-
-
-
-The release APK is signed for distribution. Future updates must use a compatible signing key.
-
-
-
+**Đặng Lâm Nguyên**
