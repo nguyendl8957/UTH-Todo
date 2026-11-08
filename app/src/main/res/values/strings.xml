@@ -100,6 +100,7 @@
     <string name="tasks_mark_pending">Đánh dấu chưa hoàn thành</string>
     <string name="tasks_urgent">Gấp</string>
     <string name="tasks_today">Hôm nay</string>
+    <string name="tasks_yesterday">Hôm qua</string>
     <string name="tasks_tomorrow">Ngày mai</string>
     <string name="tasks_this_week">Tuần này</string>
 

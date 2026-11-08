@@ -74,6 +74,7 @@
     <string name="tasks_mark_pending">Mark incomplete</string>
     <string name="tasks_urgent">Urgent</string>
     <string name="tasks_today">Today</string>
+    <string name="tasks_yesterday">Yesterday</string>
     <string name="tasks_tomorrow">Tomorrow</string>
     <string name="tasks_this_week">This week</string>
     <string name="task_editor_cancel">Cancel</string>

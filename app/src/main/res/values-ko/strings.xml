@@ -74,6 +74,7 @@
     <string name="tasks_mark_pending">미완료 표시</string>
     <string name="tasks_urgent">긴급</string>
     <string name="tasks_today">오늘</string>
+    <string name="tasks_yesterday">어제</string>
     <string name="tasks_tomorrow">내일</string>
     <string name="tasks_this_week">이번 주</string>
     <string name="task_editor_cancel">취소</string>

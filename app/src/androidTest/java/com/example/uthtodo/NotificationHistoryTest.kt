@@ -19,6 +19,47 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class NotificationHistoryTest {
     @Test
+    fun markingOneOfFourNotificationsReadDoesNotDuplicateHistory() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val uid = "mark-read-${UUID.randomUUID()}"
+        val preferences = context.getSharedPreferences("uth_notification_history", 0)
+        val key = "notifications_$uid"
+        try {
+            repeat(4) { index ->
+                NotificationHistory.add(
+                    context,
+                    uid,
+                    TodoNotificationEntry(
+                        title = "Test $index",
+                        message = "Body $index",
+                        timestamp = System.currentTimeMillis() - index * 10_000L,
+                        type = TodoNotificationType.REMINDER,
+                        id = "${uid}-$index"
+                    )
+                )
+            }
+            val originalIds = NotificationHistory.read(context, uid).map { it.id }
+            assertEquals(4, originalIds.size)
+
+            val afterFirstTap = NotificationHistory.markRead(context, uid, originalIds.first())
+            assertEquals(4, afterFirstTap.size)
+            assertEquals(originalIds, afterFirstTap.map { it.id })
+            assertEquals(1, afterFirstTap.count { it.isRead })
+
+            val afterRepeatedTap = NotificationHistory.markRead(context, uid, originalIds.first())
+            assertEquals(4, afterRepeatedTap.size)
+            assertEquals(1, afterRepeatedTap.count { it.isRead })
+
+            val afterMarkAll = NotificationHistory.markAllRead(context, uid)
+            assertEquals(4, afterMarkAll.size)
+            assertTrue(afterMarkAll.all { it.isRead })
+            assertEquals(4, NotificationHistory.read(context, uid).size)
+        } finally {
+            preferences.edit().remove(key).commit()
+        }
+    }
+
+    @Test
     fun legacyRowsKeepContentAndDefaultToUnreadUntilRead() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val uid = "test-${UUID.randomUUID()}"

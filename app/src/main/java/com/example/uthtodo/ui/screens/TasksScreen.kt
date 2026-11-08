@@ -27,6 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
+import com.example.uthtodo.data.task.RelativeTaskDate
+import com.example.uthtodo.data.task.classifyTaskDate
 import com.example.uthtodo.ui.components.TodoBottomBar
 import com.example.uthtodo.ui.components.TodoTab
 import java.time.LocalDate
@@ -457,15 +459,13 @@ private fun formatTaskDate(date: String): String {
         LocalDate.parse(date)
     }.getOrNull() ?: return date
 
-    val today = LocalDate.now()
-
-    return when (parsed) {
-        today -> stringResource(R.string.tasks_today)
-        today.plusDays(1) ->
-            stringResource(R.string.tasks_tomorrow)
-        else -> parsed.format(
+    return when (classifyTaskDate(date, LocalDate.now())) {
+        RelativeTaskDate.YESTERDAY -> stringResource(R.string.tasks_yesterday)
+        RelativeTaskDate.TODAY -> stringResource(R.string.tasks_today)
+        RelativeTaskDate.TOMORROW -> stringResource(R.string.tasks_tomorrow)
+        RelativeTaskDate.ABSOLUTE, RelativeTaskDate.INVALID -> parsed.format(
             DateTimeFormatter.ofPattern(
-                "dd/MM",
+                "dd/MM/yyyy",
                 LocalConfiguration.current.locales[0] ?: Locale.getDefault()
             )
         )

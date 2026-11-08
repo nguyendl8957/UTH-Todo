@@ -204,10 +204,7 @@ class MainActivity : ComponentActivity() {
                         val id = openedNotificationId
                         val uid = userId
                         if (id != null && uid != null) {
-                            notificationEntries.clear()
-                            notificationEntries.addAll(
-                                NotificationHistory.markRead(applicationContext, uid, id)
-                            )
+                            NotificationHistory.markRead(applicationContext, uid, id)
                             resetNavigation(StartScreen.NOTIFICATIONS)
                             openedNotificationId = null
                         }
@@ -222,10 +219,9 @@ class MainActivity : ComponentActivity() {
                             )
                             val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                                 if (key == "notifications_$userId") {
+                                    val stored = NotificationHistory.read(applicationContext, userId)
                                     notificationEntries.clear()
-                                    notificationEntries.addAll(
-                                        NotificationHistory.read(applicationContext, userId)
-                                    )
+                                    notificationEntries.addAll(stored)
                                 }
                             }
                             preferences.registerOnSharedPreferenceChangeListener(listener)
@@ -585,18 +581,12 @@ class MainActivity : ComponentActivity() {
                                 entries = notificationEntries,
                                 onReadNotification = { id ->
                                     userId?.let { uid ->
-                                        notificationEntries.clear()
-                                        notificationEntries.addAll(
-                                            NotificationHistory.markRead(this@MainActivity, uid, id)
-                                        )
+                                        NotificationHistory.markRead(this@MainActivity, uid, id)
                                     }
                                 },
                                 onMarkAllRead = {
                                     userId?.let { uid ->
-                                        notificationEntries.clear()
-                                        notificationEntries.addAll(
-                                            NotificationHistory.markAllRead(this@MainActivity, uid)
-                                        )
+                                        NotificationHistory.markAllRead(this@MainActivity, uid)
                                     }
                                 },
                                 onHomeClick = { resetNavigation(StartScreen.HOME) },

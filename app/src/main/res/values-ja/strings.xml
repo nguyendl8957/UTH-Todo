@@ -74,6 +74,7 @@
     <string name="tasks_mark_pending">未完了に戻す</string>
     <string name="tasks_urgent">緊急</string>
     <string name="tasks_today">今日</string>
+    <string name="tasks_yesterday">昨日</string>
     <string name="tasks_tomorrow">明日</string>
     <string name="tasks_this_week">今週</string>
     <string name="task_editor_cancel">キャンセル</string>

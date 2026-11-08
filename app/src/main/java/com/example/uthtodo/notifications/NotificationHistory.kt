@@ -119,8 +119,9 @@ object NotificationHistory {
 
     @Synchronized
     fun markRead(context: Context, uid: String, id: String): List<TodoNotificationEntry> {
+        val before = read(context, uid)
         val now = System.currentTimeMillis()
-        val all = read(context, uid).map { entry ->
+        val all = before.map { entry ->
             if (entry.id == id && !entry.isRead) entry.copy(readAt = now) else entry
         }
         write(context, uid, all)

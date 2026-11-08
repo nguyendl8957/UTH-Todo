@@ -66,7 +66,7 @@ Firestore Security Rules restrict task access to the authenticated user whose UI
 
 ## Release and Installation
 
-**Latest stable release:** [v1.1.0](https://github.com/nguyendl8957/UTH-Todo/releases/tag/v1.1.0)
+**Latest stable release:** [v1.1.1](https://github.com/nguyendl8957/UTH-Todo/releases/tag/v1.1.1)
 
 - [Download the signed Android APK from GitHub](https://github.com/nguyendl8957/UTH-Todo/releases/latest)
 - [Alternative APK download via Google Drive](https://drive.google.com/file/d/1YLc9B3_ilNt3cmPmaETMS5C6riBsuX8q/view)

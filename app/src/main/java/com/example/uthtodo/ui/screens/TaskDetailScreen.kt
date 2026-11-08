@@ -32,6 +32,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uthtodo.R
+import com.example.uthtodo.data.task.RelativeTaskDate
+import com.example.uthtodo.data.task.classifyTaskDate
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -275,6 +277,30 @@ fun TaskDetailScreen(
                 }
             }
 
+            if (task.note.isNotBlank()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colorScheme.surface)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.task_editor_note),
+                        color = DetailGray,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = task.note,
+                        color = DetailText,
+                        fontSize = 15.sp,
+                        lineHeight = 22.sp
+                    )
+                }
+            }
+
             DetailSubtasksSection(
                 task = task,
                 onSubtasksChange = onSubtasksChange
@@ -337,12 +363,11 @@ private fun DetailSectionTitle(text: String) {
 private fun formatDetailDate(date: String): String {
     val parsed = runCatching { LocalDate.parse(date) }.getOrNull()
         ?: return date
-    val today = LocalDate.now()
-
-    return when (parsed) {
-        today -> stringResource(R.string.tasks_today)
-        today.plusDays(1) -> stringResource(R.string.tasks_tomorrow)
-        else -> parsed.format(
+    return when (classifyTaskDate(date, LocalDate.now())) {
+        RelativeTaskDate.YESTERDAY -> stringResource(R.string.tasks_yesterday)
+        RelativeTaskDate.TODAY -> stringResource(R.string.tasks_today)
+        RelativeTaskDate.TOMORROW -> stringResource(R.string.tasks_tomorrow)
+        RelativeTaskDate.ABSOLUTE, RelativeTaskDate.INVALID -> parsed.format(
             DateTimeFormatter.ofPattern("dd/MM/yyyy", LocalConfiguration.current.locales[0] ?: Locale.getDefault())
         )
     }
